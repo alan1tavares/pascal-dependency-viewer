@@ -1,7 +1,6 @@
 const { BrowserWindow } = require('electron');
 
-
-function createWindow(fileHtml) {
+function createMainWindow(fileHtml) {
 
    return () => {
       const mainWindow = new BrowserWindow({
@@ -16,4 +15,4 @@ function createWindow(fileHtml) {
    }
 }
 
-module.exports = createWindow;
+module.exports = createMainWindow;

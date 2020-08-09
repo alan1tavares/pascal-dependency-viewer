@@ -1,4 +1,6 @@
 const { app } = require('electron');
-const createWindow = require('./src/view/MainWindow');
+const createMainWindow = require('./src/controller/createMainWindow');
+const MainMenu = require('./src/controller/MainMenu');
 
-app.whenReady().then(createWindow('index.html'));
+MainMenu.create();
+app.whenReady().then(createMainWindow('index.html'));
