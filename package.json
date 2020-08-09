@@ -1,0 +1,27 @@
+{
+  "name": "pascal-dependency-viewer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alan1tavares/pascal-dependency-viewer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alan1tavares/pascal-dependency-viewer/issues"
+  },
+  "homepage": "https://github.com/alan1tavares/pascal-dependency-viewer#readme",
+  "devDependencies": {
+    "electron": "^9.2.0"
+  },
+  "dependencies": {
+    "vis": "^4.21.0-EOL"
+  }
+}
