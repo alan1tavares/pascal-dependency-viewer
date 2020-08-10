@@ -23,6 +23,7 @@
     "jest": "^26.2.2"
   },
   "dependencies": {
+    "electron-store": "^6.0.0",
     "vis": "^4.21.0-EOL"
   }
 }
