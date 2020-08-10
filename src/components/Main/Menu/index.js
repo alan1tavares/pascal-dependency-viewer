@@ -1,6 +1,7 @@
+const fs = require('fs');
 const { Menu } = require('electron');
 const { handleOpenDialogSelectFile } = require('./events');
-const fs = require('fs');
+const selectUsesFromSource = require('../../../model/selectUsesFromSource');
 
 function MainMenu() {
    const menuTemlate = [{
@@ -10,20 +11,13 @@ function MainMenu() {
          label: "Open",
          click: async () => {
             const filePath = await handleOpenDialogSelectFile();
-            console.log('filePah', filePath);
 
-            fs.readFile(filePath, 'utf8', (err, data) => {
-               if (err) throw err;
-               // console.log('data', data);
-               const regex = /uses\s*(\w*\.\w*|\w*|\s|\,)*;/gi;
-               const matchUses = data.match(regex);
-               console.log('matchUses', matchUses);
-            });
-
-         },
+            const source = fs.readFileSync(filePath, 'utf-8');
+            const listUses = selectUsesFromSource(source);
+            console.log(listUses);
+         }
       },]
-   },
-   ]
+   }];
 
    const menu = Menu.buildFromTemplate(menuTemlate);
    Menu.setApplicationMenu(menu)
