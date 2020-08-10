@@ -1,5 +1,6 @@
 const { Menu } = require('electron');
-const { handleOpenFile } = require('./events');
+const { handleOpenDialogSelectFile } = require('./events');
+const fs = require('fs');
 
 class MainMenu {
 
@@ -9,7 +10,19 @@ class MainMenu {
          label: 'File',
          submenu: [{
             label: "Open",
-            click: () => handleOpenFile()
+            click: async () => {
+               const filePath = await handleOpenDialogSelectFile();
+               console.log('filePah', filePath);
+
+               fs.readFile(filePath, 'utf8', (err, data) => {
+                  if (err) throw err;
+                  // console.log('data', data);
+                  const regex = /uses\s*(\w*\.\w*|\w*|\s|\,)*;/gi;
+                  const matchUses = data.match(regex);
+                  console.log('matchUses', matchUses);
+               });
+
+            },
          },]
       },
       ]

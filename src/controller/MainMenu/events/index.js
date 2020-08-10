@@ -1,19 +1,18 @@
 const { dialog } = require('electron')
 
-async function handleOpenFile() {
+async function handleOpenDialogSelectFile() {
    const properties = ['openFile'];
    const filters = [{
       name: 'Custom File Type',
       extensions: ['pas'],
    }];
 
-
    const filePath = await dialog.showOpenDialog({
       properties,
       filters,
    });
 
-   return filePath;
+   return filePath.filePaths[0];
 }
 
-module.exports = {handleOpenFile};
+module.exports = {handleOpenDialogSelectFile};
