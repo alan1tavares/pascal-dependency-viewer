@@ -2,6 +2,7 @@ const fs = require('fs');
 const { Menu } = require('electron');
 const { handleOpenDialogSelectFile } = require('./events');
 const selectUsesFromSource = require('../../../model/selectUsesFromSource');
+const Store = require('electron-store');
 
 function MainMenu() {
    const menuTemlate = [{
