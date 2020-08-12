@@ -10,7 +10,7 @@ function MainWindow(fileHtml) {
             nodeIntegration: true
          }
       })
-
+      mainWindow.webContents.openDevTools()
       mainWindow.loadFile(fileHtml);
    }
 }

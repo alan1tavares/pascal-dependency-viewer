@@ -1,8 +1,10 @@
 const fs = require('fs');
 const { Menu } = require('electron');
-const { handleOpenDialogSelectFile } = require('./events');
-const { selectUsesFromSource } = require('../../../model/parsePascalSource');
 const Store = require('electron-store');
+
+const { handleOpenDialogSelectFile } = require('./events');
+const { selectUsesFromSource, getUnitName } = require('../../../model/parsePascalSource');
+const mountDependenceGraphStructure = require('../../../model/mountDependenceGraphStructure');
 
 function MainMenu() {
    const menuTemlate = [{
@@ -14,8 +16,15 @@ function MainMenu() {
             const filePath = await handleOpenDialogSelectFile();
 
             const source = fs.readFileSync(filePath, 'utf-8');
+            const unitName = getUnitName(source);
             const listUses = selectUsesFromSource(source);
-            console.log(listUses);
+            const graph = mountDependenceGraphStructure(unitName, listUses);
+
+            const store = new Store();
+            store.set(graph);
+
+            console.log('open file \n', store.store);
+
          }
       },]
    }];

@@ -20,6 +20,4 @@ function mountJsonNode(label) {
    return {id: label, label};
 }
 
-
-
 module.exports = mountDependenceGraphStructure;
