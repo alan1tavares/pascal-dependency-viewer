@@ -5,6 +5,7 @@ const Store = require('electron-store');
 const { handleOpenDialogSelectFile } = require('./events');
 const { selectUsesFromSource, getUnitName } = require('../../../model/parsePascalSource');
 const mountDependenceGraphStructure = require('../../../model/mountDependenceGraphStructure');
+const { reloadMainWindow } = require('../Window');
 
 function MainMenu() {
    const menuTemlate = [{
@@ -22,9 +23,8 @@ function MainMenu() {
 
             const store = new Store();
             store.set(graph);
-
-            console.log('open file \n', store.store);
-
+            
+            reloadMainWindow();
          }
       },]
    }];
