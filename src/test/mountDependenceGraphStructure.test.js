@@ -9,16 +9,16 @@ test('mountGraphStructure', () => {
 
    const result = {
       nodes: [
-         { id: unitMain, label: unitMain, },
-         { id: 'Winapi.Windows', label: 'Winapi.Windows' },
-         { id: 'Winapi.Messages', label: 'Winapi.Messages' },
-         { id: 'System.SysUtils', label: 'System.SysUtils' },
+         { id: unitMain.toLowerCase(), label: unitMain, },
+         { id: 'winapi.windows', label: 'Winapi.Windows' },
+         { id: 'winapi.messages', label: 'Winapi.Messages' },
+         { id: 'system.sysutils', label: 'System.SysUtils' },
       ],
 
       edges: [
-         { from: unitMain, to: 'Winapi.Windows' },
-         { from: unitMain, to: 'Winapi.Messages' },
-         { from: unitMain, to: 'System.SysUtils' }
+         { from: unitMain.toLowerCase(), to: 'winapi.windows' },
+         { from: unitMain.toLowerCase(), to: 'winapi.messages' },
+         { from: unitMain.toLowerCase(), to: 'system.sysutils' }
       ],
    };
 
