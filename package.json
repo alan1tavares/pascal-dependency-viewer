@@ -2,7 +2,7 @@
   "name": "pascal-dependency-viewer",
   "version": "1.0.0",
   "description": "",
-  "main": "main.js",
+  "main": "app.js",
   "scripts": {
     "test": "jest",
     "start": "electron ."
