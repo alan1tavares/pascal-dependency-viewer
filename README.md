@@ -4,7 +4,11 @@ This project shows a dependecy graph on the Pascal Units.
 
 ## Installation
 
-🚧 In Construction
+```
+git clone <project>
+yarn install
+yarn start
+```
 
 ## Contributing
 
