@@ -19,11 +19,12 @@
   },
   "homepage": "https://github.com/alan1tavares/pascal-dependency-viewer#readme",
   "devDependencies": {
-    "electron": "^9.2.0",
-    "jest": "^26.2.2"
+    "electron": "^44.3.0",
+    "jest": "^30.5.1"
   },
   "dependencies": {
-    "electron-store": "^6.0.0",
-    "vis": "^4.21.0-EOL"
+    "electron-store": "^8.2.0",
+    "vis-data": "^8.0.5",
+    "vis-network": "^10.1.2"
   }
 }

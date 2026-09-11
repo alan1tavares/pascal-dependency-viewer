@@ -10,20 +10,21 @@
 
    <div id="mynetwork"></div>
    <script type="text/javascript">
-      const vis = require('vis');
+      const { DataSet } = require('vis-data');
+      const { Network } = require('vis-network');
       const Store = require('electron-store');
 
       const store = new Store();
 
-      const nodes = new vis.DataSet(store.get('nodes'));
-      const edges = new vis.DataSet(store.get('edges'));
+      const nodes = new DataSet(store.get('nodes'));
+      const edges = new DataSet(store.get('edges'));
 
       const container = document.getElementById("mynetwork");
       const data = { nodes, edges };
 
       const arrows = 'to';
       const options = { edges: { arrows } };
-      const network = new vis.Network(container, data, options);
+      const network = new Network(container, data, options);
 
    </script>
 
