@@ -15,4 +15,19 @@ async function handleOpenDialogSelectFile() {
    return filePath.filePaths[0];
 }
 
-module.exports = {handleOpenDialogSelectFile};
+async function handleOpenDialogSelectProject() {
+   const properties = ['openFile'];
+   const filters = [{
+      name: 'Delphi Project',
+      extensions: ['dpr'],
+   }];
+
+   const filePath = await dialog.showOpenDialog({
+      properties,
+      filters,
+   });
+
+   return filePath.filePaths[0];
+}
+
+module.exports = {handleOpenDialogSelectFile, handleOpenDialogSelectProject};

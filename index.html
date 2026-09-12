@@ -8,24 +8,85 @@
 
 <body>
 
+   <div id="rootUnitSelection" style="display: none;">
+      <input type="text" id="rootUnitFilter" placeholder="Filtrar por nome da unit">
+      <ul id="rootUnitList"></ul>
+   </div>
+
    <div id="mynetwork"></div>
+
    <script type="text/javascript">
+      const fs = require('fs');
+      const path = require('path');
       const { DataSet } = require('vis-data');
       const { Network } = require('vis-network');
       const Store = require('electron-store');
+      const { getUnitName, selectUsesFromSource } = require('./src/model/parsePascalSource');
+      const mountDependenceGraphStructure = require('./src/model/mountDependenceGraphStructure');
 
       const store = new Store();
 
-      const nodes = new DataSet(store.get('nodes'));
-      const edges = new DataSet(store.get('edges'));
+      function renderGraph(nodesData, edgesData) {
+         document.getElementById('rootUnitSelection').style.display = 'none';
+         const container = document.getElementById('mynetwork');
+         container.style.display = 'block';
 
-      const container = document.getElementById("mynetwork");
-      const data = { nodes, edges };
+         const nodes = new DataSet(nodesData);
+         const edges = new DataSet(edgesData);
+         const data = { nodes, edges };
 
-      const arrows = 'to';
-      const options = { edges: { arrows } };
-      const network = new Network(container, data, options);
+         const arrows = 'to';
+         const options = { edges: { arrows } };
+         new Network(container, data, options);
+      }
 
+      function selectRootUnit(projectDir, projectUnit) {
+         const filePath = path.resolve(projectDir, projectUnit.path);
+         const source = fs.readFileSync(filePath, 'utf-8');
+         const unitName = getUnitName(source);
+         const listUses = selectUsesFromSource(source);
+         const graph = mountDependenceGraphStructure(unitName, listUses);
+
+         store.delete('projectUnits');
+         store.delete('projectDir');
+         store.set({ view: 'graph', ...graph });
+
+         renderGraph(graph.nodes, graph.edges);
+      }
+
+      function renderRootUnitList(projectUnits, projectDir, filterText) {
+         const list = document.getElementById('rootUnitList');
+         list.innerHTML = '';
+
+         const filtered = projectUnits.filter(projectUnit =>
+            projectUnit.unitName.toLowerCase().includes(filterText.toLowerCase())
+         );
+
+         filtered.forEach(projectUnit => {
+            const item = document.createElement('li');
+            item.textContent = `${projectUnit.unitName} (${projectUnit.path})`;
+            item.addEventListener('click', () => selectRootUnit(projectDir, projectUnit));
+            list.appendChild(item);
+         });
+      }
+
+      function renderRootUnitSelection(projectUnits, projectDir) {
+         document.getElementById('mynetwork').style.display = 'none';
+         document.getElementById('rootUnitSelection').style.display = 'block';
+
+         const filterInput = document.getElementById('rootUnitFilter');
+         filterInput.addEventListener('input', () => {
+            renderRootUnitList(projectUnits, projectDir, filterInput.value);
+         });
+
+         renderRootUnitList(projectUnits, projectDir, '');
+      }
+
+      if (store.get('view') === 'rootUnitSelection') {
+         renderRootUnitSelection(store.get('projectUnits'), store.get('projectDir'));
+      } else {
+         renderGraph(store.get('nodes'), store.get('edges'));
+      }
    </script>
 
 </body>
