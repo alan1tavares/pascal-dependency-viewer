@@ -27,3 +27,31 @@ o diálogo.
 
 Não é bloqueante — é só um lembrete para quando o projeto decidir investir
 em tratamento de erro nos handlers de menu.
+
+# Sugestão — wiring de `index.html` sem teste automatizado
+
+Origem: verificação da change `external-unit` (`/opsx:verify`, 2026-09-11).
+
+## O problema
+
+A ligação `selectRootUnit` → `projectUnits` → `mountDependenceGraphStructure`
+e a configuração `options.groups` do `vis-network` (ambas em `index.html`),
+que fazem a distinção visual entre Project Unit e External Unit, só foram
+verificadas manualmente (screenshot via driver Playwright/Electron nesta
+sessão) — não há teste automatizado cobrindo esse wiring.
+
+Isso é consistente com o resto do projeto: a camada de renderer/Electron
+não tem testes Jest, só o `src/model` é testado (per `CLAUDE.md`). Não é
+uma lacuna introduzida por esta change especificamente.
+
+## Sugestão
+
+Se algum dia decidirem cobrir a camada de renderer com testes (ex.:
+Playwright/Electron), incluir um caso que abra um `.dpr` de teste, escolha
+uma Root Unit com dependências dentro e fora da lista de Project Units, e
+confirme programaticamente (via `store.get('nodes')` ou inspeção do DOM)
+que os nós recebem o `group` correto e que o `Network` foi criado com as
+opções de estilo esperadas.
+
+Não é bloqueante — é só um lembrete para quando o projeto decidir investir
+em testes da camada de renderer.

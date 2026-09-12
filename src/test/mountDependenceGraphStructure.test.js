@@ -24,3 +24,27 @@ test('mountGraphStructure', () => {
 
    expect(graphStructure).toEqual(result);
 });
+
+test('mountGraphStructure com projectUnits classifica os nós', () => {
+
+   const unitMain = 'UnitPrincipal';
+   const arrayUses = ['UnitA', 'Vcl.Forms'];
+   const projectUnits = [{ unitName: 'UnitA', path: 'UnitA.pas' }];
+
+   const graphStructure = mountDependenceGraphStructure(unitMain, arrayUses, projectUnits);
+
+   const result = {
+      nodes: [
+         { id: unitMain.toLowerCase(), label: unitMain, group: 'projectUnit' },
+         { id: 'unita', label: 'UnitA', group: 'projectUnit' },
+         { id: 'vcl.forms', label: 'Vcl.Forms', group: 'externalUnit' },
+      ],
+
+      edges: [
+         { from: unitMain.toLowerCase(), to: 'unita' },
+         { from: unitMain.toLowerCase(), to: 'vcl.forms' },
+      ],
+   };
+
+   expect(graphStructure).toEqual(result);
+});

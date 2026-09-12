@@ -36,16 +36,20 @@
          const data = { nodes, edges };
 
          const arrows = 'to';
-         const options = { edges: { arrows } };
+         const groups = {
+            projectUnit: { shape: 'ellipse', color: '#97C2FC' },
+            externalUnit: { shape: 'box', color: '#D3D3D3' },
+         };
+         const options = { edges: { arrows }, groups };
          new Network(container, data, options);
       }
 
-      function selectRootUnit(projectDir, projectUnit) {
+      function selectRootUnit(projectDir, projectUnit, projectUnits) {
          const filePath = path.resolve(projectDir, projectUnit.path);
          const source = fs.readFileSync(filePath, 'utf-8');
          const unitName = getUnitName(source);
          const listUses = selectUsesFromSource(source);
-         const graph = mountDependenceGraphStructure(unitName, listUses);
+         const graph = mountDependenceGraphStructure(unitName, listUses, projectUnits);
 
          store.delete('projectUnits');
          store.delete('projectDir');
@@ -65,7 +69,7 @@
          filtered.forEach(projectUnit => {
             const item = document.createElement('li');
             item.textContent = `${projectUnit.unitName} (${projectUnit.path})`;
-            item.addEventListener('click', () => selectRootUnit(projectDir, projectUnit));
+            item.addEventListener('click', () => selectRootUnit(projectDir, projectUnit, projectUnits));
             list.appendChild(item);
          });
       }
