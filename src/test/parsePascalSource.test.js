@@ -1,6 +1,6 @@
-const fs = require('fs');
-const path = require('path');
-const { selectUsesFromSource, getUnitName, USES_CLAUSE_SCOPE } = require('../model/parsePascalSource');
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import { selectUsesFromSource, getUnitName, USES_CLAUSE_SCOPE } from '../model/parsePascalSource/index.js';
 
 test('get list of uses in interface', () => {
 
@@ -66,13 +66,13 @@ test('interfaceAndImplementation scope falls back to interface list when impleme
 });
 
 function getSourceFileString() {
-   const filePath = path.join(__dirname, 'souceUsesInInterface.pas');
-   const source = fs.readFileSync(filePath, 'utf-8')
+   const filePath = join(import.meta.dirname, 'souceUsesInInterface.pas');
+   const source = readFileSync(filePath, 'utf-8')
    return source;
 }
 
 function getSourceFileStringWithBothSections() {
-   const filePath = path.join(__dirname, 'sourceUsesInInterfaceAndImplementation.pas');
-   const source = fs.readFileSync(filePath, 'utf-8')
+   const filePath = join(import.meta.dirname, 'sourceUsesInInterfaceAndImplementation.pas');
+   const source = readFileSync(filePath, 'utf-8')
    return source;
 }

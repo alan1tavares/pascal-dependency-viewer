@@ -1,4 +1,4 @@
-function parseDprSource(source) {
+export default function parseDprSource(source) {
    const usesClauseRegex = /uses[\s\S]*?;/i;
    const usesClause = source.match(usesClauseRegex)[0];
 
@@ -12,5 +12,3 @@ function parseDprSource(source) {
 
    return projectUnits;
 }
-
-module.exports = parseDprSource;

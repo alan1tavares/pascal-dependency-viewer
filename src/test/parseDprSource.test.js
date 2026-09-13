@@ -1,6 +1,6 @@
-const fs = require('fs');
-const path = require('path');
-const parseDprSource = require('../model/parseDprSource');
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import parseDprSource from '../model/parseDprSource/index.js';
 
 test('extrai todas as Project Units de um .dpr', () => {
 
@@ -41,7 +41,7 @@ test('reconhece entrada de unit de formulário com comentário {FormX}', () => {
 });
 
 function getSourceFileString() {
-   const filePath = path.join(__dirname, 'sourceDprWithProjectUnits.dpr');
-   const source = fs.readFileSync(filePath, 'utf-8');
+   const filePath = join(import.meta.dirname, 'sourceDprWithProjectUnits.dpr');
+   const source = readFileSync(filePath, 'utf-8');
    return source;
 }

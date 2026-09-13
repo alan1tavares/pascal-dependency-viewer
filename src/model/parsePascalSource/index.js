@@ -1,5 +1,5 @@
-const selectUsesFromSource = require('./selectUsesFromSource');
-const getUnitName = require('./getUnitName');
-const USES_CLAUSE_SCOPE = require('./usesClauseScope');
+import selectUsesFromSource from "./selectUsesFromSource.js";
+import getUnitName from "./getUnitName.js";
+import { USES_CLAUSE_SCOPE } from "./usesClauseScope.js";
 
-module.exports = { selectUsesFromSource, getUnitName, USES_CLAUSE_SCOPE };
+export { selectUsesFromSource, getUnitName, USES_CLAUSE_SCOPE };

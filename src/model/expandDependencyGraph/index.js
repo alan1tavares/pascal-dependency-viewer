@@ -1,5 +1,5 @@
-const { selectUsesFromSource } = require('../parsePascalSource');
-const classifyExternalUnits = require('../classifyExternalUnits');
+import { selectUsesFromSource } from '../parsePascalSource/index.js';
+import classifyExternalUnits from '../classifyExternalUnits/index.js';
 
 function expandDependencyGraph(rootUnitName, projectUnits, readFile, scope) {
    const nodes = new Map();
@@ -45,4 +45,4 @@ function mountJsonNode(label, group) {
    return { id: label.toLowerCase(), label, group };
 }
 
-module.exports = expandDependencyGraph;
+export default expandDependencyGraph;

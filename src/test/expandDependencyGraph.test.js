@@ -1,5 +1,6 @@
-const expandDependencyGraph = require('../model/expandDependencyGraph');
-const { USES_CLAUSE_SCOPE } = require('../model/parsePascalSource');
+import { jest } from '@jest/globals';
+import expandDependencyGraph from '../model/expandDependencyGraph/index.js';
+import { USES_CLAUSE_SCOPE } from '../model/parsePascalSource/index.js';
 
 function fakeReadFile(sources) {
    return path => sources[path];

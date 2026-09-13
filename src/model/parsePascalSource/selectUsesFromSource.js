@@ -1,4 +1,4 @@
-const USES_CLAUSE_SCOPE = require('./usesClauseScope');
+import { USES_CLAUSE_SCOPE } from './usesClauseScope.js';
 
 const USES_CLAUSE_REGEX = /uses\s*(\w*\.\w*|\w*|\s|\,)*;/i;
 
@@ -56,4 +56,4 @@ function mergeUnitLists(firstList, secondList) {
    return merged;
 }
 
-module.exports = selectUsesFromSource;
+export default selectUsesFromSource;

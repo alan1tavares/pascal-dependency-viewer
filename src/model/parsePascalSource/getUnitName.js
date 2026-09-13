@@ -1,4 +1,4 @@
-function getUnitName(source) {
+export default function getUnitName(source) {
    const regex = /unit.*;/i;
    const unitName = source
       .match(regex)[0]
@@ -6,5 +6,3 @@ function getUnitName(source) {
 
    return unitName;
 }
-
-module.exports = getUnitName;

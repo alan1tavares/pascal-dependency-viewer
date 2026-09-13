@@ -1,4 +1,4 @@
-const classifyExternalUnits = require('../classifyExternalUnits');
+import classifyExternalUnits from '../classifyExternalUnits/index.js';
 
 function mountDependenceGraphStructure(nameUnitMain, unitDependenceArray, projectUnits) {
 
@@ -32,4 +32,4 @@ function mountJsonNode(label, group) {
    return group ? {id: label.toLowerCase(), label, group} : {id: label.toLowerCase(), label};
 }
 
-module.exports = mountDependenceGraphStructure;
+export default mountDependenceGraphStructure;

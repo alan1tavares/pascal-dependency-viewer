@@ -7,4 +7,4 @@ function classifyExternalUnits(dependencyNames, projectUnits) {
    }));
 }
 
-module.exports = classifyExternalUnits;
+export default classifyExternalUnits;
