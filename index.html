@@ -1,114 +1,28 @@
-<!DOCTYPE html lang="en">
-
-<head>
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Pascal Dependency Viewer</title>
-</head>
-
-<body>
-
-   <div id="rootUnitSelection" style="display: none;">
-      <input type="text" id="rootUnitFilter" placeholder="Filtrar por nome da unit">
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pascal Dependency Viewer</title>
+  </head>
+  <body>
+    <div id="rootUnitSelection" style="display: none;">
+      <input type="text" id="rootUnitFilter" placeholder="Filtrar por nome da unit" />
       <div id="usesScopeControl">
-         <label>
-            <input type="radio" name="usesScope" value="interface" checked>
-            Interface
-         </label>
-         <label>
-            <input type="radio" name="usesScope" value="interfaceAndImplementation">
-            Interface + Implementation
-         </label>
+        <label>
+          <input type="radio" name="usesScope" value="interface" checked />
+          Interface
+        </label>
+        <label>
+          <input type="radio" name="usesScope" value="interfaceAndImplementation" />
+          Interface + Implementation
+        </label>
       </div>
       <ul id="rootUnitList"></ul>
-   </div>
+    </div>
 
-   <div id="mynetwork"></div>
+    <div id="mynetwork"></div>
 
-   <script type="text/javascript">
-      const fs = require('fs');
-      const path = require('path');
-      const { DataSet } = require('vis-data');
-      const { Network } = require('vis-network');
-      const Store = require('electron-store');
-      const { getUnitName } = require('./src/model/parsePascalSource');
-      const expandDependencyGraph = require('./src/model/expandDependencyGraph');
-
-      const store = new Store();
-
-      function renderGraph(nodesData, edgesData) {
-         document.getElementById('rootUnitSelection').style.display = 'none';
-         const container = document.getElementById('mynetwork');
-         container.style.display = 'block';
-
-         const nodes = new DataSet(nodesData);
-         const edges = new DataSet(edgesData);
-         const data = { nodes, edges };
-
-         const arrows = 'to';
-         const groups = {
-            projectUnit: { shape: 'ellipse', color: '#97C2FC' },
-            externalUnit: { shape: 'box', color: '#D3D3D3' },
-         };
-         const physics = { stabilization: { iterations: 200 } };
-         const options = { edges: { arrows }, groups, physics };
-         const network = new Network(container, data, options);
-
-         network.once('stabilizationIterationsDone', () => {
-            network.setOptions({ physics: false });
-         });
-      }
-
-      function selectRootUnit(projectDir, projectUnit, projectUnits) {
-         const filePath = path.resolve(projectDir, projectUnit.path);
-         const source = fs.readFileSync(filePath, 'utf-8');
-         const unitName = getUnitName(source);
-         const scope = document.querySelector('input[name="usesScope"]:checked').value;
-         const readFile = relativePath => fs.readFileSync(path.resolve(projectDir, relativePath), 'utf-8');
-         const graph = expandDependencyGraph(unitName, projectUnits, readFile, scope);
-
-         store.delete('projectUnits');
-         store.delete('projectDir');
-         store.set({ view: 'graph', ...graph });
-
-         renderGraph(graph.nodes, graph.edges);
-      }
-
-      function renderRootUnitList(projectUnits, projectDir, filterText) {
-         const list = document.getElementById('rootUnitList');
-         list.innerHTML = '';
-
-         const filtered = projectUnits.filter(projectUnit =>
-            projectUnit.unitName.toLowerCase().includes(filterText.toLowerCase())
-         );
-
-         filtered.forEach(projectUnit => {
-            const item = document.createElement('li');
-            item.textContent = `${projectUnit.unitName} (${projectUnit.path})`;
-            item.addEventListener('click', () => selectRootUnit(projectDir, projectUnit, projectUnits));
-            list.appendChild(item);
-         });
-      }
-
-      function renderRootUnitSelection(projectUnits, projectDir) {
-         document.getElementById('mynetwork').style.display = 'none';
-         document.getElementById('rootUnitSelection').style.display = 'block';
-
-         const filterInput = document.getElementById('rootUnitFilter');
-         filterInput.addEventListener('input', () => {
-            renderRootUnitList(projectUnits, projectDir, filterInput.value);
-         });
-
-         renderRootUnitList(projectUnits, projectDir, '');
-      }
-
-      if (store.get('view') === 'rootUnitSelection') {
-         renderRootUnitSelection(store.get('projectUnits'), store.get('projectDir'));
-      } else {
-         renderGraph(store.get('nodes'), store.get('edges'));
-      }
-   </script>
-
-</body>
-
+    <script type="module" src="/src/renderer.js"></script>
+  </body>
 </html>
