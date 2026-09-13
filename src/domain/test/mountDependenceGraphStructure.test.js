@@ -1,4 +1,4 @@
-import mountDependenceGraphStructure from '../model/mountDependenceGraphStructure/index.js';
+import mountDependenceGraphStructure from '../mountDependenceGraphStructure/index.js';
 
 test('mountGraphStructure', () => {
 

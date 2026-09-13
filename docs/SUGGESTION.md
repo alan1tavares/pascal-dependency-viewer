@@ -41,7 +41,7 @@ verificadas manualmente (screenshot via driver Playwright/Electron nesta
 sessão) — não há teste automatizado cobrindo esse wiring.
 
 Isso é consistente com o resto do projeto: a camada de renderer/Electron
-não tem testes Jest, só o `src/model` é testado (per `CLAUDE.md`). Não é
+não tem testes Jest, só o `src/domain` é testado (per `CLAUDE.md`). Não é
 uma lacuna introduzida por esta change especificamente.
 
 ## Sugestão
@@ -71,7 +71,7 @@ teste Jest ou E2E cobrindo esse wiring.
 
 Isso é consistente com a mesma lacuna já registrada acima para o wiring de
 External Unit: a camada de renderer não tem testes automatizados, só
-`src/model` é testado (per `CLAUDE.md`). Não é uma lacuna introduzida
+`src/domain` é testado (per `CLAUDE.md`). Não é uma lacuna introduzida
 especificamente por esta change.
 
 ## Sugestão

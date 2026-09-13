@@ -1,6 +1,6 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { ipcRenderer } from 'electron';
 
-contextBridge.exposeInMainWorld('pascalDependencyViewer', {
+export const api = {
   openFile: () => ipcRenderer.invoke('openFile'),
   openProject: () => ipcRenderer.invoke('openProject'),
   expandFromRootUnit: (args) => ipcRenderer.invoke('expandFromRootUnit', args),
@@ -14,4 +14,4 @@ contextBridge.exposeInMainWorld('pascalDependencyViewer', {
     ipcRenderer.on('app:project-loaded', listener);
     return () => ipcRenderer.removeListener('app:project-loaded', listener);
   },
-});
+};

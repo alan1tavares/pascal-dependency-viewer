@@ -1,4 +1,4 @@
-import classifyExternalUnits from '../model/classifyExternalUnits/index.js';
+import classifyExternalUnits from '../classifyExternalUnits/index.js';
 
 test('dependência corresponde a uma Project Unit', () => {
    const dependencyNames = ['UnitB'];

@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { selectUsesFromSource, getUnitName, USES_CLAUSE_SCOPE } from '../model/parsePascalSource/index.js';
+import { selectUsesFromSource, getUnitName, USES_CLAUSE_SCOPE } from '../parsePascalSource/index.js';
 
 test('get list of uses in interface', () => {
 

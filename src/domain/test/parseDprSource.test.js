@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import parseDprSource from '../model/parseDprSource/index.js';
+import parseDprSource from '../parseDprSource/index.js';
 
 test('extrai todas as Project Units de um .dpr', () => {
 
