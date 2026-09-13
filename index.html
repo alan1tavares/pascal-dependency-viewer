@@ -10,6 +10,16 @@
 
    <div id="rootUnitSelection" style="display: none;">
       <input type="text" id="rootUnitFilter" placeholder="Filtrar por nome da unit">
+      <div id="usesScopeControl">
+         <label>
+            <input type="radio" name="usesScope" value="interface" checked>
+            Interface
+         </label>
+         <label>
+            <input type="radio" name="usesScope" value="interfaceAndImplementation">
+            Interface + Implementation
+         </label>
+      </div>
       <ul id="rootUnitList"></ul>
    </div>
 
@@ -48,7 +58,8 @@
          const filePath = path.resolve(projectDir, projectUnit.path);
          const source = fs.readFileSync(filePath, 'utf-8');
          const unitName = getUnitName(source);
-         const listUses = selectUsesFromSource(source);
+         const scope = document.querySelector('input[name="usesScope"]:checked').value;
+         const listUses = selectUsesFromSource(source, scope);
          const graph = mountDependenceGraphStructure(unitName, listUses, projectUnits);
 
          store.delete('projectUnits');

@@ -1,15 +1,15 @@
-# TODO — próximos passos (exploração de 2026-09-11)
+# TODO — próximos passos
 
-Registro da sessão de `/opsx:explore` que revisou o `CONTEXT.md` e mapeou o
-que falta implementar. Nenhuma decisão foi tomada aqui — são trilhas em
-aberto para retomar depois.
+Registro de sessões de `/opsx:explore` que revisaram o `CONTEXT.md` e
+mapearam o que falta implementar. Nenhuma decisão foi tomada aqui — são
+trilhas em aberto para retomar depois.
 
 ## Estado atual
 
 ```
-Fluxo File > Open (único que existe de ponta a ponta)
+Fluxo File > Open (.pas avulso)
 
-  .pas ──▶ getUnitName + selectUsesFromSource
+  .pas ──▶ getUnitName + selectUsesFromSource (scope 'interface', fixo)
               │
               ▼
   mountDependenceGraphStructure (1 nível só)
@@ -18,63 +18,67 @@ Fluxo File > Open (único que existe de ponta a ponta)
   electron-store ──▶ index.html (vis-network)
 
 
-parseDprSource — existe, testado, mas órfão
+Fluxo Open Project (.dpr) → Root Unit
 
-  .dpr ──▶ parseDprSource ──▶ [{unitName, path}, ...]
-                                    │
-                                    ▼
-                              (nada consome isso ainda)
+  .dpr ──▶ parseDprSource ──▶ tela de busca/listagem ──▶ clique numa Project Unit
+                                                                │
+                                                                ▼
+                                    mountDependenceGraphStructure (1 nível só)  ← ainda aqui
+                                                                │
+                                                                ▼
+                                    electron-store ──▶ index.html (vis-network)
+
+
+expandDependencyGraph — existe, testado (DAG deduplicado, recursivo), órfão
+
+  rootUnitName + projectUnits + readFile ──▶ expandDependencyGraph ──▶ { nodes, edges }
+                                                    │
+                                                    ▼
+                                    (nada na UI chama isso ainda)
 ```
 
-`parseDprSource` foi entregue isoladamente pela change
-`2026-09-11-parse-dpr-project-units` (arquivada), que já deixou
-explicitamente fora de escopo: ligar o `.dpr` ao menu, tela de Root Unit e
-expansão do grafo.
+`expandDependencyGraph` (change `2026-09-12-expand-dependency-graph`,
+arquivada) e o parâmetro `scope` de `selectUsesFromSource` (change
+`2026-09-12-uses-clause-scope`, arquivada) foram entregues isoladamente no
+model layer, cada um explicitando "fora de escopo: ligar à UI" no próprio
+proposal.
 
 ## Gap entre o `CONTEXT.md` e o código
 
 | Conceito no `CONTEXT.md` | Situação |
 |---|---|
-| **Project** / **Project Unit** | ✅ `parseDprSource` extrai isso |
-| **Root Unit** (escolhida numa tela de busca/listagem) | ❌ não existe tela nenhuma de seleção — só `File > Open` avulso |
-| **External Unit** (leaf node, estilo visual distinto) | ❌ `mountDependenceGraphStructure` não distingue nada — todo nó é igual |
-| **Dependency Graph** (expansão transitiva, DAG, unidade visitada uma vez) | ❌ hoje só existe 1 nível (unidade + seus `uses` diretos), sem recursão nem dedup |
-| **Uses Clause Scope** (`interface` só vs `interface`+`implementation`) | ❌ `selectUsesFromSource` pega a primeira cláusula `uses` que encontrar, sem diferenciar seção |
+| **Dependency Graph** (expansão transitiva, DAG, unidade visitada uma vez) | ⚠️ implementado e testado em `expandDependencyGraph`, mas `index.html` (`selectRootUnit`) ainda chama `mountDependenceGraphStructure` — a seleção de Root Unit continua entregando só 1 nível. O spec `root-unit-selection` ainda documenta "grafo de 1 nível" como requisito SHALL, desatualizado em relação à capability `dependency-graph-expansion` que já existe |
+| **Uses Clause Scope** (`interface` só vs `interface`+`implementation`, "escolhido por geração na tela de busca/listagem") | ⚠️ `selectUsesFromSource(source, scope)` existe e está correto, mas nenhum call site passa `scope` (nem `Menu/index.js`, nem `index.html`, nem `expandDependencyGraph` internamente) e não existe controle nenhum na tela `rootUnitSelection` para escolher isso |
 
-## Trilhas abertas
+Os demais conceitos (Project, Project Unit, Root Unit, External Unit) estão
+implementados e ligados de ponta a ponta.
 
-```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│ 1. Seleção   │     │ 2. Expansão   │     │ 3. Uses Scope │
-│  de Root Unit│ ──▶ │  do grafo     │ ◀── │  (interface x │
-│  (UI + .dpr) │     │  (DAG, model) │     │  impl.)       │
-└──────────────┘     └──────────────┘     └──────────────┘
-        ↑ mais visível          ↑ mais "motor"      ↑ mais fundação
-```
+## Trilha aberta: ligar `expandDependencyGraph` + `scope` à tela de Root Unit
 
-1. **Fechar o próximo elo da corrente: menu → seleção de Root Unit.**
-   Pegar `parseDprSource`, ler um `.dpr` pelo menu, listar as Project Units
-   numa tela de busca, usuário escolhe a Root Unit. Não exige resolver
-   expansão transitiva nem External Unit ainda — entrega algo visível
-   rápido.
+Puxado em sessão de `/opsx:explore` de 2026-09-13. A mudança é pequena em
+assinatura (repassar `scope` até `selectUsesFromSource` dentro do laço de
+`expandDependencyGraph`; trocar a chamada em `index.html` por
+`expandDependencyGraph` com um `readFile` injetado que resolve caminho a
+partir de `projectDir`), mas exige atualizar o spec `root-unit-selection`
+(de "1 nível" para "Dependency Graph completo") e decidir a UI do seletor
+de escopo (radio buttons na tela `rootUnitSelection`, estado local — não
+persistido, conforme o `CONTEXT.md`).
 
-2. **Ir direto para o algoritmo de expansão (Dependency Graph).**
-   Caminhar recursivamente pelos `uses`, distinguir Project Unit de External
-   Unit, montar um DAG deduplicado (unidade revisitada vira edge de volta,
-   não subtree nova). Dá pra desenvolver e testar isolado em `src/model`,
-   sem UI — segue o padrão de lógica pura primeiro que o projeto já usa.
+Consequências a ter em mente quando essa trilha for retomada:
 
-3. **Resolver o Uses Clause Scope antes de tudo.**
-   Afeta tanto o parsing de `.pas` quanto a futura expansão do grafo —
-   `selectUsesFromSource` precisaria diferenciar `interface`/`implementation`
-   primeiro, senão a expansão herda a ambiguidade atual.
-
-Nenhuma trilha depende estritamente das outras para *começar* — dependem
-umas das outras só para o fluxo ficar completo ponta a ponta. Também ficou
-em aberto: a distinção visual de External Unit no grafo (estilo do nó).
+- **Trocar de escopo exige nova seleção de Root Unit.** Como a tela de
+  listagem é abandonada assim que o grafo renderiza, não existe
+  "regenerar com outro escopo" sem voltar ao `Open Project` — coerente
+  com "not a persisted global setting" do `CONTEXT.md`, mas vale
+  confirmar que é o comportamento desejado antes de implementar.
+- **Leitura síncrona de N arquivos a cada clique.** `expandDependencyGraph`
+  lê um `.pas` por Project Unit alcançável, de forma síncrona, na thread
+  do renderer. Aceitável para o porte típico de projeto Pascal (dezenas de
+  units), mas passa a acontecer de verdade a cada seleção de Root Unit em
+  vez de só em teste — primeira vez que esse trade-off (já aceito no
+  design doc de `expand-dependency-graph`) encontra um usuário real.
 
 ## Próximo passo sugerido
 
-Quando uma trilha for escolhida, abrir uma change no OpenSpec
-(`openspec/changes/`) para ela, seguindo o padrão da
-`parse-dpr-project-units` já arquivada.
+Abrir uma change no OpenSpec (`openspec/changes/`) para essa trilha,
+marcando `root-unit-selection` como Modified Capability.
