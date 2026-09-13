@@ -1,7 +1,7 @@
 const { selectUsesFromSource } = require('../parsePascalSource');
 const classifyExternalUnits = require('../classifyExternalUnits');
 
-function expandDependencyGraph(rootUnitName, projectUnits, readFile) {
+function expandDependencyGraph(rootUnitName, projectUnits, readFile, scope) {
    const nodes = new Map();
    const edges = [];
 
@@ -11,7 +11,7 @@ function expandDependencyGraph(rootUnitName, projectUnits, readFile) {
    while (queue.length > 0) {
       const { unitName, path } = queue.shift();
       const source = readFile(path);
-      const dependencyNames = selectUsesFromSource(source);
+      const dependencyNames = selectUsesFromSource(source, scope);
       const classifiedDependencies = classifyExternalUnits(dependencyNames, projectUnits);
 
       classifiedDependencies.forEach(({ unitName: dependencyName, isExternal }) => {

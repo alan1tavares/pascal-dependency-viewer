@@ -1,4 +1,5 @@
 const expandDependencyGraph = require('../model/expandDependencyGraph');
+const { USES_CLAUSE_SCOPE } = require('../model/parsePascalSource');
 
 function fakeReadFile(sources) {
    return path => sources[path];
@@ -110,6 +111,46 @@ test('ciclo direto entre duas Project Units não recursa infinitamente', () => {
          { from: 'unitb', to: 'unita' },
       ],
    });
+});
+
+test('scope se aplica também a Project Units intermediárias, não só à Root Unit', () => {
+   const projectUnits = [
+      { unitName: 'UnitA', path: 'UnitA.pas' },
+      { unitName: 'UnitB', path: 'UnitB.pas' },
+      { unitName: 'UnitC', path: 'UnitC.pas' },
+   ];
+   const readFile = fakeReadFile({
+      'UnitA.pas': 'unit UnitA; interface uses UnitB; implementation end.',
+      'UnitB.pas': 'unit UnitB; interface implementation uses UnitC; end.',
+      'UnitC.pas': 'unit UnitC; interface implementation end.',
+   });
+
+   const result = expandDependencyGraph(
+      'UnitA',
+      projectUnits,
+      readFile,
+      USES_CLAUSE_SCOPE.INTERFACE_AND_IMPLEMENTATION
+   );
+
+   expect(result.edges).toContainEqual({ from: 'unitb', to: 'unitc' });
+});
+
+test('scope omitido usa interface como padrão em toda a expansão', () => {
+   const projectUnits = [
+      { unitName: 'UnitA', path: 'UnitA.pas' },
+      { unitName: 'UnitB', path: 'UnitB.pas' },
+   ];
+   const readFile = fakeReadFile({
+      'UnitA.pas': 'unit UnitA; interface uses UnitB; implementation end.',
+      'UnitB.pas': 'unit UnitB; interface implementation uses UnitC; end.',
+   });
+
+   const result = expandDependencyGraph('UnitA', projectUnits, readFile);
+
+   expect(result.nodes).not.toContainEqual(
+      expect.objectContaining({ id: 'unitc' })
+   );
+   expect(result.edges).not.toContainEqual({ from: 'unitb', to: 'unitc' });
 });
 
 test('dependência de uma Project Unit intermediária é External Unit', () => {
