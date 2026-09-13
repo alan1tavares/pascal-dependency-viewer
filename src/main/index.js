@@ -3,7 +3,6 @@ import path from "node:path";
 import started from "electron-squirrel-startup";
 
 import { buildMenu } from "./menu.js";
-import { performOpenFile, registerFileHandler } from "./ipc/file.js";
 import { performOpenProject, registerProjectHandler } from "./ipc/project.js";
 import { registerGraphHandler } from "./ipc/graph.js";
 
@@ -14,7 +13,6 @@ if (started) {
 
 let mainWindow;
 
-registerFileHandler(ipcMain);
 registerProjectHandler(ipcMain);
 registerGraphHandler(ipcMain);
 
@@ -49,7 +47,7 @@ const createWindow = () => {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   createWindow();
-  buildMenu(mainWindow, { performOpenFile, performOpenProject });
+  buildMenu(mainWindow, { performOpenProject });
 
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.

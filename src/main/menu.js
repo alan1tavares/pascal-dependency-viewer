@@ -1,17 +1,10 @@
 import { Menu } from "electron";
 
-export function buildMenu(mainWindow, { performOpenFile, performOpenProject }) {
+export function buildMenu(mainWindow, { performOpenProject }) {
   const template = [
     {
       label: "File",
       submenu: [
-        {
-          label: "Open",
-          click: async () => {
-            const graph = await performOpenFile();
-            if (graph) mainWindow.webContents.send("app:graph-loaded", graph);
-          },
-        },
         {
           label: "Open Project",
           click: async () => {

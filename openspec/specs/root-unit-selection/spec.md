@@ -10,8 +10,10 @@ iniciar a visualização do grafo.
 
 ### Requirement: Abertura de um Projeto (`.dpr`) pelo menu
 O sistema SHALL oferecer, no menu `File`, uma opção para abrir um arquivo
-`.dpr` via diálogo nativo de seleção de arquivo, separada da opção existente
-de abrir um `.pas` avulso.
+`.dpr` via diálogo nativo de seleção de arquivo. Essa opção ("Open
+Project") SHALL ser a única entrada do menu `File` para carregar
+conteúdo Pascal — não há mais uma opção separada para abrir um `.pas`
+avulso.
 
 #### Scenario: Usuário abre um `.dpr` pelo menu
 - **WHEN** o usuário escolhe "Open Project" no menu e seleciona um arquivo
@@ -19,6 +21,11 @@ de abrir um `.pas` avulso.
 - **THEN** o conteúdo do arquivo é lido e parseado com `parseDprSource`, e a
   lista de Project Units resultante fica disponível para a tela de
   busca/listagem
+
+#### Scenario: Menu `File` não tem opção de abrir um `.pas` avulso
+- **WHEN** o usuário abre o menu `File`
+- **THEN** a única opção disponível para carregar conteúdo é "Open
+  Project"; não existe uma opção "Open" para um `.pas` avulso
 
 ### Requirement: Listagem e busca de Project Units para escolha da Root Unit
 Após abrir um Projeto, o sistema SHALL exibir uma tela com todas as Project
@@ -126,20 +133,3 @@ SHALL aparecer como um único nó no grafo renderizado.
   `interface + implementation` no momento do clique
 - **THEN** o grafo renderizado contém os edges `UnitPrincipal -> UnitA` e
   `UnitA -> UnitB`
-
-### Requirement: Isolamento de estado entre o fluxo de Projeto e o fluxo de arquivo avulso
-O sistema SHALL garantir que nenhuma chave de estado gravada em
-`electron-store` por um fluxo (seleção de Root Unit vs. `File > Open` de um
-`.pas` avulso) sobreviva à troca para o outro fluxo.
-
-#### Scenario: Abrir um `.pas` avulso depois de ter aberto um Projeto
-- **WHEN** o usuário abriu um `.dpr` (store contém `projectUnits` e
-  `projectDir`) e em seguida usa `File > Open` para abrir um `.pas` avulso
-- **THEN** o `electron-store`, após a nova gravação, não contém mais
-  `projectUnits` nem `projectDir` — apenas o grafo do `.pas` recém-aberto
-
-#### Scenario: Selecionar uma Root Unit depois de listar Project Units
-- **WHEN** o usuário está na tela de busca/listagem (store com
-  `view: 'rootUnitSelection'`) e escolhe uma Root Unit
-- **THEN** o `electron-store` passa a ter `view: 'graph'` com `nodes` e
-  `edges` do grafo resultante, sem `projectUnits` nem `projectDir`

@@ -15,11 +15,10 @@ Unit, a lista de Project Units de um Projeto (`{ unitName, path }[]`,
 formato de `parseDprSource`), uma função `readFile(path) => source`
 injetada e um `scope` opcional de Uses Clause Scope (`interface` ou
 `interfaceAndImplementation`, usando `interface` como padrão quando
-omitido), e retorna a estrutura `{ nodes, edges }` (mesmo formato de
-`mountDependenceGraphStructure`) representando o Dependency Graph completo
-alcançável a partir da Root Unit: a Root Unit, cada Project Unit atingida
-transitivamente por `uses`, e cada External Unit referenciada como nó
-folha. O `scope` informado SHALL ser aplicado à extração do `uses` de toda
+omitido), e retorna a estrutura `{ nodes, edges }` representando o
+Dependency Graph completo alcançável a partir da Root Unit: a Root Unit,
+cada Project Unit atingida transitivamente por `uses`, e cada External
+Unit referenciada como nó folha. O `scope` informado SHALL ser aplicado à extração do `uses` de toda
 unidade visitada durante a expansão — a Root Unit e cada Project Unit
 alcançada transitivamente — e não apenas à Root Unit.
 

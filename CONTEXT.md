@@ -1,7 +1,7 @@
 # Pascal Dependency Viewer
 
-Visualizes how Pascal/Delphi units depend on each other, either from a single
-opened `.pas` file or from a whole Delphi project.
+Visualizes how Pascal/Delphi units depend on each other, starting from a
+Root Unit picked out of a whole Delphi project.
 
 ## Language
 
@@ -39,8 +39,6 @@ reached again from elsewhere in the walk gets an edge back to its existing
 node rather than a duplicated subtree, so the result is a DAG, not a literal
 tree (diamond dependencies merge; cycles close instead of recursing forever).
 _Avoid_: "Dependency Tree" — imprecise, since nodes can have multiple parents.
-Contrast with the single-file flow (`File > Open`), which only ever shows one
-level (a unit and its direct `uses`), independent of any Project.
 
 **Uses Clause Scope**:
 Whether a Dependency Graph walk follows only the `interface` section's
