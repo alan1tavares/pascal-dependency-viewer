@@ -1,13 +1,25 @@
 import { DataSet } from 'vis-data';
 import { Network } from 'vis-network';
 
-export function renderGraph(nodesData, edgesData) {
+const ORIGIN_INTERFACE = 'interface';
+const ORIGIN_IMPLEMENTATION = 'implementation';
+const ORIGIN_BOTH = 'both';
+
+export function renderGraph(nodesData, edgesData, rootUnitId) {
   document.getElementById('rootUnitSelection').style.display = 'none';
   const container = document.getElementById('mynetwork');
   container.style.display = 'block';
+  document.getElementById('viewFilterPanel').style.display = 'block';
+
+  const edgeOriginById = new Map();
+  const edgesWithId = edgesData.map(edge => {
+    const id = `${edge.from}::${edge.to}`;
+    edgeOriginById.set(id, edge.origin);
+    return { id, from: edge.from, to: edge.to };
+  });
 
   const nodes = new DataSet(nodesData);
-  const edges = new DataSet(edgesData);
+  const edges = new DataSet(edgesWithId);
   const data = { nodes, edges };
 
   const arrows = 'to';
@@ -22,4 +34,57 @@ export function renderGraph(nodesData, edgesData) {
   network.once('stabilizationIterationsDone', () => {
     network.setOptions({ physics: false });
   });
+
+  setUpViewFilter({ nodes, edges, nodesData, edgeOriginById, rootUnitId });
+}
+
+function setUpViewFilter({ nodes, edges, nodesData, edgeOriginById, rootUnitId }) {
+  const interfaceCheckbox = document.getElementById('viewFilterInterface');
+  const implementationCheckbox = document.getElementById('viewFilterImplementation');
+  interfaceCheckbox.checked = true;
+  implementationCheckbox.checked = true;
+
+  function isOriginVisible(origin) {
+    if (origin === ORIGIN_BOTH) {
+      return interfaceCheckbox.checked || implementationCheckbox.checked;
+    }
+    if (origin === ORIGIN_INTERFACE) {
+      return interfaceCheckbox.checked;
+    }
+    return implementationCheckbox.checked;
+  }
+
+  function applyViewFilter() {
+    const visibleNodeIds = new Set([rootUnitId]);
+
+    const edgeUpdates = Array.from(edgeOriginById, ([id, origin]) => {
+      const visible = isOriginVisible(origin);
+      if (visible) {
+        const [from, to] = id.split('::');
+        visibleNodeIds.add(from);
+        visibleNodeIds.add(to);
+      }
+      return { id, hidden: !visible };
+    });
+    edges.update(edgeUpdates);
+
+    const nodeUpdates = nodesData.map(node => ({
+      id: node.id,
+      hidden: !visibleNodeIds.has(node.id),
+    }));
+    nodes.update(nodeUpdates);
+  }
+
+  function handleCheckboxChange(event) {
+    if (!interfaceCheckbox.checked && !implementationCheckbox.checked) {
+      event.target.checked = true;
+      return;
+    }
+    applyViewFilter();
+  }
+
+  interfaceCheckbox.onchange = handleCheckboxChange;
+  implementationCheckbox.onchange = handleCheckboxChange;
+
+  applyViewFilter();
 }

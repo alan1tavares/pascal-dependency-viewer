@@ -3,9 +3,8 @@ import { renderGraph } from './graphView.js';
 const api = window.pascalDependencyViewer;
 
 async function selectRootUnit(projectDir, projectUnit, projectUnits) {
-  const scope = document.querySelector('input[name="usesScope"]:checked').value;
-  const graph = await api.expandFromRootUnit({ projectDir, projectUnit, projectUnits, scope });
-  renderGraph(graph.nodes, graph.edges);
+  const graph = await api.expandFromRootUnit({ projectDir, projectUnit, projectUnits });
+  renderGraph(graph.nodes, graph.edges, graph.rootUnitId);
 }
 
 function renderRootUnitList(projectUnits, projectDir, filterText) {
@@ -26,6 +25,7 @@ function renderRootUnitList(projectUnits, projectDir, filterText) {
 
 export function renderRootUnitSelection(projectUnits, projectDir) {
   document.getElementById('mynetwork').style.display = 'none';
+  document.getElementById('viewFilterPanel').style.display = 'none';
   document.getElementById('rootUnitSelection').style.display = 'block';
 
   const filterInput = document.getElementById('rootUnitFilter');

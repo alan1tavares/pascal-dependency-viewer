@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { selectUsesFromSource, getUnitName, USES_CLAUSE_SCOPE } from '../parsePascalSource/index.js';
+import { selectUsesFromSource, getUnitName, USES_CLAUSE_ORIGIN } from '../parsePascalSource/index.js';
 
 test('get list of uses in interface', () => {
 
@@ -11,7 +11,7 @@ test('get list of uses in interface', () => {
       ['Winapi.Windows', 'Winapi.Messages', 'System.SysUtils',
          'System.Variants', 'System.Classes', 'Vcl.Graphics',
          'Vcl.Controls', 'Vcl.Forms', 'Vcl.Dialogs', 'Vcl.StdCtrls'
-      ]
+      ].map(unitName => ({ unitName, origin: USES_CLAUSE_ORIGIN.INTERFACE }))
    );
 });
 
@@ -23,46 +23,68 @@ test('get the unit name', () => {
    expect(unitName).toBe('untExercicio04');
 });
 
-test('interface scope excludes uses from the implementation section', () => {
+test('units declared only in the interface section get origin interface', () => {
 
    const source = getSourceFileStringWithBothSections();
-   const matchUses = selectUsesFromSource(source, USES_CLAUSE_SCOPE.INTERFACE);
+   const matchUses = selectUsesFromSource(source);
 
-   expect(matchUses).toEqual(['Winapi.Windows', 'System.SysUtils']);
+   expect(matchUses).toContainEqual({ unitName: 'System.SysUtils', origin: USES_CLAUSE_ORIGIN.INTERFACE });
 });
 
-test('interfaceAndImplementation scope combines uses from both sections', () => {
+test('extraction always covers both sections, tagging origin per unit', () => {
 
    const source = getSourceFileStringWithBothSections();
-   const matchUses = selectUsesFromSource(source, USES_CLAUSE_SCOPE.INTERFACE_AND_IMPLEMENTATION);
+   const matchUses = selectUsesFromSource(source);
 
-   expect(matchUses).toEqual(
-      ['Winapi.Windows', 'System.SysUtils', 'System.StrUtils', 'System.DateUtils']
-   );
+   expect(matchUses).toEqual([
+      { unitName: 'Winapi.Windows', origin: USES_CLAUSE_ORIGIN.INTERFACE },
+      { unitName: 'System.SysUtils', origin: USES_CLAUSE_ORIGIN.INTERFACE },
+      { unitName: 'System.StrUtils', origin: USES_CLAUSE_ORIGIN.IMPLEMENTATION },
+      { unitName: 'System.DateUtils', origin: USES_CLAUSE_ORIGIN.IMPLEMENTATION },
+   ]);
 });
 
-test('interfaceAndImplementation scope does not duplicate a unit used in both sections', () => {
+test('unit declared in both sections (case-insensitive) collapses into a single entry with origin both', () => {
 
    const source = `
       unit untDuplicado;
       interface
       uses UnitA, UnitB;
       implementation
-      uses UnitB, UnitC;
+      uses unitb, UnitC;
       end.
    `;
-   const matchUses = selectUsesFromSource(source, USES_CLAUSE_SCOPE.INTERFACE_AND_IMPLEMENTATION);
+   const matchUses = selectUsesFromSource(source);
 
-   expect(matchUses).toEqual(['UnitA', 'UnitB', 'UnitC']);
+   expect(matchUses).toEqual([
+      { unitName: 'UnitA', origin: USES_CLAUSE_ORIGIN.INTERFACE },
+      { unitName: 'UnitB', origin: USES_CLAUSE_ORIGIN.BOTH },
+      { unitName: 'UnitC', origin: USES_CLAUSE_ORIGIN.IMPLEMENTATION },
+   ]);
 });
 
-test('interfaceAndImplementation scope falls back to interface list when implementation has no uses', () => {
+test('unit repeated within the same section only appears once', () => {
+
+   const source = `
+      unit untRepetido;
+      interface
+      uses UnitA, UnitA;
+      implementation
+      end.
+   `;
+   const matchUses = selectUsesFromSource(source);
+
+   expect(matchUses).toEqual([
+      { unitName: 'UnitA', origin: USES_CLAUSE_ORIGIN.INTERFACE },
+   ]);
+});
+
+test('implementation section without a uses clause does not throw and yields only interface origins', () => {
 
    const source = getSourceFileString();
-   const interfaceOnly = selectUsesFromSource(source, USES_CLAUSE_SCOPE.INTERFACE);
-   const bothSections = selectUsesFromSource(source, USES_CLAUSE_SCOPE.INTERFACE_AND_IMPLEMENTATION);
+   const matchUses = selectUsesFromSource(source);
 
-   expect(bothSections).toEqual(interfaceOnly);
+   expect(matchUses.every(entry => entry.origin === USES_CLAUSE_ORIGIN.INTERFACE)).toBe(true);
 });
 
 function getSourceFileString() {

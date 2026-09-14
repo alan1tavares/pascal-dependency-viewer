@@ -85,17 +85,20 @@ from the menu) — there is no `electron-store`/shared-blob step and no
 `reloadMainWindow()`; navigating between the Root Unit selection screen and
 the graph screen is just DOM manipulation inside one page load.
 
-**Graph shape convention** (`domain/mountDependenceGraphStructure/index.js`,
-`domain/expandDependencyGraph/index.js`): node `id` is always lowercased (so
-edges match regardless of case) while `label` keeps the original casing.
-Edges always point from the main unit `to` each dependency. When expanding
-from a Root Unit, nodes get a `group` (`projectUnit` or `externalUnit`) used
-by the renderer's `vis-network` options to style them differently.
+**Graph shape convention** (`domain/expandDependencyGraph/index.js`): node
+`id` is always lowercased (so edges match regardless of case) while `label`
+keeps the original casing. Edges always point from the main unit `to` each
+dependency and carry a `origin` (`interface`, `implementation`, or `both`,
+per `domain/parsePascalSource/selectUsesFromSource.js`'s Uses Clause Origin
+— see `CONTEXT.md`). When expanding from a Root Unit, nodes get a `group`
+(`projectUnit` or `externalUnit`) used by the renderer's `vis-network`
+options to style them differently.
 
 ## Notes
 
-- Parsing is regex-based and currently reads only the first `uses` clause it
-  finds (`selectUsesFromSource`). There is no handling for a missing `unit`/`uses`
+- Parsing is regex-based; `selectUsesFromSource` always extracts both the
+  `interface` and `implementation` `uses` clauses, tagging each unit with
+  its Uses Clause Origin. There is no handling for a missing `unit`/`uses`
   clause — `.match(...)[0]` will throw on no match.
 - `src/domain/**` (renamed from `src/model/**`) has no Electron dependency —
   it's plain ESM JavaScript, importable and testable on its own.

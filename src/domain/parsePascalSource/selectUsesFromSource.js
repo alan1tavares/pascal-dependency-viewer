@@ -1,17 +1,13 @@
-import { USES_CLAUSE_SCOPE } from './usesClauseScope.js';
+import { USES_CLAUSE_ORIGIN } from './usesClauseOrigin.js';
 
 const USES_CLAUSE_REGEX = /uses\s*(\w*\.\w*|\w*|\s|\,)*;/i;
 
-function selectUsesFromSource(source, scope = USES_CLAUSE_SCOPE.INTERFACE) {
+function selectUsesFromSource(source) {
    const { interfaceSection, implementationSection } = splitIntoSections(source);
    const interfaceUses = extractUsesFromSection(interfaceSection);
-
-   if (scope === USES_CLAUSE_SCOPE.INTERFACE) {
-      return interfaceUses;
-   }
-
    const implementationUses = extractUsesFromSection(implementationSection);
-   return mergeUnitLists(interfaceUses, implementationUses);
+
+   return mergeWithOrigin(interfaceUses, implementationUses);
 }
 
 function splitIntoSections(source) {
@@ -36,24 +32,49 @@ function extractUsesFromSection(sectionSource) {
       return [];
    }
 
-   return match[0]
-      .replace(/(uses|;|\s)/gi, '')
-      .split(',');
+   return dedupeUnitNames(
+      match[0]
+         .replace(/(uses|;|\s)/gi, '')
+         .split(',')
+   );
 }
 
-function mergeUnitLists(firstList, secondList) {
-   const seen = new Set(firstList.map(unitName => unitName.toLowerCase()));
-   const merged = [...firstList];
-
-   secondList.forEach(unitName => {
-      if (seen.has(unitName.toLowerCase())) {
-         return;
+function dedupeUnitNames(unitNames) {
+   const seen = new Set();
+   return unitNames.filter(unitName => {
+      const key = unitName.toLowerCase();
+      if (seen.has(key)) {
+         return false;
       }
-      seen.add(unitName.toLowerCase());
-      merged.push(unitName);
+      seen.add(key);
+      return true;
+   });
+}
+
+function mergeWithOrigin(interfaceUses, implementationUses) {
+   const implementationKeys = new Set(implementationUses.map(unitName => unitName.toLowerCase()));
+   const seen = new Set();
+   const result = [];
+
+   interfaceUses.forEach(unitName => {
+      const key = unitName.toLowerCase();
+      seen.add(key);
+      result.push({
+         unitName,
+         origin: implementationKeys.has(key) ? USES_CLAUSE_ORIGIN.BOTH : USES_CLAUSE_ORIGIN.INTERFACE,
+      });
    });
 
-   return merged;
+   implementationUses.forEach(unitName => {
+      const key = unitName.toLowerCase();
+      if (seen.has(key)) {
+         return;
+      }
+      seen.add(key);
+      result.push({ unitName, origin: USES_CLAUSE_ORIGIN.IMPLEMENTATION });
+   });
+
+   return result;
 }
 
 export default selectUsesFromSource;

@@ -17,25 +17,51 @@
         height: 100%;
         box-sizing: border-box;
       }
+
+      #viewFilterPanel {
+        display: none;
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 10;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 8px 12px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+        font-family: sans-serif;
+        font-size: 14px;
+      }
+
+      #viewFilterPanel p {
+        margin: 0 0 6px;
+        font-weight: bold;
+      }
+
+      #viewFilterPanel label {
+        display: block;
+      }
     </style>
   </head>
   <body>
     <div id="rootUnitSelection" style="display: none;">
       <input type="text" id="rootUnitFilter" placeholder="Filtrar por nome da unit" />
-      <div id="usesScopeControl">
-        <label>
-          <input type="radio" name="usesScope" value="interface" checked />
-          Interface
-        </label>
-        <label>
-          <input type="radio" name="usesScope" value="interfaceAndImplementation" />
-          Interface + Implementation
-        </label>
-      </div>
       <ul id="rootUnitList"></ul>
     </div>
 
     <div id="mynetwork"></div>
+
+    <div id="viewFilterPanel">
+      <p>View Filter</p>
+      <label>
+        <input type="checkbox" id="viewFilterInterface" checked />
+        Interface
+      </label>
+      <label>
+        <input type="checkbox" id="viewFilterImplementation" checked />
+        Implementação
+      </label>
+    </div>
 
     <script type="module" src="/src/renderer/index.js"></script>
   </body>

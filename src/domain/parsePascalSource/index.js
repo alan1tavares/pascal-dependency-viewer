@@ -1,5 +1,5 @@
 import selectUsesFromSource from "./selectUsesFromSource.js";
 import getUnitName from "./getUnitName.js";
-import { USES_CLAUSE_SCOPE } from "./usesClauseScope.js";
+import { USES_CLAUSE_ORIGIN } from "./usesClauseOrigin.js";
 
-export { selectUsesFromSource, getUnitName, USES_CLAUSE_SCOPE };
+export { selectUsesFromSource, getUnitName, USES_CLAUSE_ORIGIN };

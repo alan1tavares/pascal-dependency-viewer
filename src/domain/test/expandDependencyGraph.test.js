@@ -1,6 +1,5 @@
 import { jest } from '@jest/globals';
 import expandDependencyGraph from '../expandDependencyGraph/index.js';
-import { USES_CLAUSE_SCOPE } from '../parsePascalSource/index.js';
 
 function fakeReadFile(sources) {
    return path => sources[path];
@@ -28,10 +27,11 @@ test('expansão de duas camadas via Project Unit intermediária', () => {
          { id: 'system.sysutils', label: 'System.SysUtils', group: 'externalUnit' },
       ],
       edges: [
-         { from: 'unita', to: 'unitb' },
-         { from: 'unitb', to: 'unitc' },
-         { from: 'unitc', to: 'system.sysutils' },
+         { from: 'unita', to: 'unitb', origin: 'interface' },
+         { from: 'unitb', to: 'unitc', origin: 'interface' },
+         { from: 'unitc', to: 'system.sysutils', origin: 'interface' },
       ],
+      rootUnitId: 'unita',
    });
 });
 
@@ -48,7 +48,8 @@ test('External Unit encontrada durante a expansão não é lida do disco', () =>
          { id: 'unita', label: 'UnitA', group: 'projectUnit' },
          { id: 'vcl.forms', label: 'Vcl.Forms', group: 'externalUnit' },
       ],
-      edges: [{ from: 'unita', to: 'vcl.forms' }],
+      edges: [{ from: 'unita', to: 'vcl.forms', origin: 'interface' }],
+      rootUnitId: 'unita',
    });
    expect(readFile).toHaveBeenCalledTimes(1);
    expect(readFile).toHaveBeenCalledWith('UnitA.pas');
@@ -79,12 +80,13 @@ test('dependência em diamante gera um único nó com dois edges', () => {
          { id: 'system.sysutils', label: 'System.SysUtils', group: 'externalUnit' },
       ],
       edges: [
-         { from: 'unita', to: 'unitb' },
-         { from: 'unita', to: 'unitc' },
-         { from: 'unitb', to: 'unitd' },
-         { from: 'unitc', to: 'unitd' },
-         { from: 'unitd', to: 'system.sysutils' },
+         { from: 'unita', to: 'unitb', origin: 'interface' },
+         { from: 'unita', to: 'unitc', origin: 'interface' },
+         { from: 'unitb', to: 'unitd', origin: 'interface' },
+         { from: 'unitc', to: 'unitd', origin: 'interface' },
+         { from: 'unitd', to: 'system.sysutils', origin: 'interface' },
       ],
+      rootUnitId: 'unita',
    });
    expect(readFile).toHaveBeenCalledWith('UnitD.pas');
    expect(readFile.mock.calls.filter(call => call[0] === 'UnitD.pas')).toHaveLength(1);
@@ -108,13 +110,14 @@ test('ciclo direto entre duas Project Units não recursa infinitamente', () => {
          { id: 'unitb', label: 'UnitB', group: 'projectUnit' },
       ],
       edges: [
-         { from: 'unita', to: 'unitb' },
-         { from: 'unitb', to: 'unita' },
+         { from: 'unita', to: 'unitb', origin: 'interface' },
+         { from: 'unitb', to: 'unita', origin: 'interface' },
       ],
+      rootUnitId: 'unita',
    });
 });
 
-test('scope se aplica também a Project Units intermediárias, não só à Root Unit', () => {
+test('dependência só na seção implementation de uma unidade intermediária aparece no grafo, com origem implementation', () => {
    const projectUnits = [
       { unitName: 'UnitA', path: 'UnitA.pas' },
       { unitName: 'UnitB', path: 'UnitB.pas' },
@@ -126,32 +129,40 @@ test('scope se aplica também a Project Units intermediárias, não só à Root 
       'UnitC.pas': 'unit UnitC; interface implementation end.',
    });
 
-   const result = expandDependencyGraph(
-      'UnitA',
-      projectUnits,
-      readFile,
-      USES_CLAUSE_SCOPE.INTERFACE_AND_IMPLEMENTATION
-   );
+   const result = expandDependencyGraph('UnitA', projectUnits, readFile);
 
-   expect(result.edges).toContainEqual({ from: 'unitb', to: 'unitc' });
+   expect(result.edges).toContainEqual({ from: 'unitb', to: 'unitc', origin: 'implementation' });
 });
 
-test('scope omitido usa interface como padrão em toda a expansão', () => {
+test('dependência da Root Unit declarada só na seção implementation aparece no grafo', () => {
    const projectUnits = [
       { unitName: 'UnitA', path: 'UnitA.pas' },
       { unitName: 'UnitB', path: 'UnitB.pas' },
    ];
    const readFile = fakeReadFile({
-      'UnitA.pas': 'unit UnitA; interface uses UnitB; implementation end.',
-      'UnitB.pas': 'unit UnitB; interface implementation uses UnitC; end.',
+      'UnitA.pas': 'unit UnitA; interface implementation uses UnitB; end.',
+      'UnitB.pas': 'unit UnitB; interface implementation end.',
    });
 
    const result = expandDependencyGraph('UnitA', projectUnits, readFile);
 
-   expect(result.nodes).not.toContainEqual(
-      expect.objectContaining({ id: 'unitc' })
-   );
-   expect(result.edges).not.toContainEqual({ from: 'unitb', to: 'unitc' });
+   expect(result.nodes).toContainEqual({ id: 'unitb', label: 'UnitB', group: 'projectUnit' });
+   expect(result.edges).toContainEqual({ from: 'unita', to: 'unitb', origin: 'implementation' });
+});
+
+test('dependência declarada nas duas seções vira um único edge com origem both', () => {
+   const projectUnits = [
+      { unitName: 'UnitA', path: 'UnitA.pas' },
+      { unitName: 'UnitB', path: 'UnitB.pas' },
+   ];
+   const readFile = fakeReadFile({
+      'UnitA.pas': 'unit UnitA; interface uses UnitB; implementation uses UnitB; end.',
+      'UnitB.pas': 'unit UnitB; interface implementation end.',
+   });
+
+   const result = expandDependencyGraph('UnitA', projectUnits, readFile);
+
+   expect(result.edges).toEqual([{ from: 'unita', to: 'unitb', origin: 'both' }]);
 });
 
 test('dependência de uma Project Unit intermediária é External Unit', () => {

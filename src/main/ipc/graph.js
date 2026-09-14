@@ -8,14 +8,13 @@ function performExpandFromRootUnit({
   projectDir,
   projectUnit,
   projectUnits,
-  scope,
 }) {
   const filePath = path.resolve(projectDir, projectUnit.path);
   const source = readFileFromDisk(filePath);
   const unitName = getUnitName(source);
   const readFile = (relativePath) =>
     readFileFromDisk(path.resolve(projectDir, relativePath));
-  return expandDependencyGraph(unitName, projectUnits, readFile, scope);
+  return expandDependencyGraph(unitName, projectUnits, readFile);
 }
 
 export function registerGraphHandler(ipcMain) {

@@ -1,21 +1,26 @@
 import { selectUsesFromSource } from '../parsePascalSource/index.js';
 import classifyExternalUnits from '../classifyExternalUnits/index.js';
 
-function expandDependencyGraph(rootUnitName, projectUnits, readFile, scope) {
+function expandDependencyGraph(rootUnitName, projectUnits, readFile) {
    const nodes = new Map();
    const edges = [];
 
-   nodes.set(rootUnitName.toLowerCase(), mountJsonNode(rootUnitName, 'projectUnit'));
+   const rootUnitId = rootUnitName.toLowerCase();
+   nodes.set(rootUnitId, mountJsonNode(rootUnitName, 'projectUnit'));
    const queue = [{ unitName: rootUnitName, path: findProjectUnitPath(rootUnitName, projectUnits) }];
 
    while (queue.length > 0) {
       const { unitName, path } = queue.shift();
       const source = readFile(path);
-      const dependencyNames = selectUsesFromSource(source, scope);
-      const classifiedDependencies = classifyExternalUnits(dependencyNames, projectUnits);
+      const usesEntries = selectUsesFromSource(source);
+      const classifiedDependencies = classifyExternalUnits(
+         usesEntries.map(entry => entry.unitName),
+         projectUnits
+      );
 
-      classifiedDependencies.forEach(({ unitName: dependencyName, isExternal }) => {
-         edges.push({ from: unitName.toLowerCase(), to: dependencyName.toLowerCase() });
+      classifiedDependencies.forEach(({ unitName: dependencyName, isExternal }, index) => {
+         const { origin } = usesEntries[index];
+         edges.push({ from: unitName.toLowerCase(), to: dependencyName.toLowerCase(), origin });
 
          if (nodes.has(dependencyName.toLowerCase())) {
             return;
@@ -31,7 +36,7 @@ function expandDependencyGraph(rootUnitName, projectUnits, readFile, scope) {
       });
    }
 
-   return { nodes: Array.from(nodes.values()), edges };
+   return { nodes: Array.from(nodes.values()), edges, rootUnitId };
 }
 
 function findProjectUnitPath(unitName, projectUnits) {
