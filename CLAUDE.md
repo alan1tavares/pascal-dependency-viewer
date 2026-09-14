@@ -31,18 +31,17 @@ it's the part covered by tests (see
 `docs/adr/0002-src-layout-main-preload-renderer-domain.md` for why this
 layout — plain JavaScript, no UI framework, no `shared/` — was chosen).
 
-- `src/main/index.js`: creates the `BrowserWindow`, registers the three IPC
+- `src/main/index.js`: creates the `BrowserWindow`, registers the two IPC
   handlers from `main/ipc/`, and builds the menu via `main/menu.js`.
-- `src/main/ipc/{file,project,graph}.js`: one module per IPC domain —
-  `file.js` (`performOpenFile`/`openFile`), `project.js`
-  (`performOpenProject`/`openProject`), `graph.js`
-  (`performExpandFromRootUnit`/`expandFromRootUnit`). `file.js` and
-  `project.js` also export their `performOpenX` function so `menu.js` can
-  reuse the same logic for the native `File` menu.
+- `src/main/ipc/{project,graph}.js`: one module per IPC domain —
+  `project.js` (`performOpenProject`/`openProject`), `graph.js`
+  (`performExpandFromRootUnit`/`expandFromRootUnit`). `project.js` also
+  exports `performOpenProject` so `menu.js` can reuse the same logic for
+  the native `File` menu.
 - `src/main/services/fileSystem.js`: thin wrapper around
-  `fs.readFileSync(filePath, 'utf-8')`, used by all three `ipc/` modules.
-- `src/main/menu.js`: `buildMenu(mainWindow, { performOpenFile, performOpenProject })`
-  — builds the `File > Open` / `File > Open Project` / `viewMenu` template.
+  `fs.readFileSync(filePath, 'utf-8')`, used by both `ipc/` modules.
+- `src/main/menu.js`: `buildMenu(mainWindow, { performOpenProject })`
+  — builds the `File > Open Project` / `viewMenu` template.
 - `src/preload/index.js` + `src/preload/api.js`: `preload/api.js` is the
   plain object exposed on `window.pascalDependencyViewer`;
   `preload/index.js` is just the `contextBridge.exposeInMainWorld` call.
@@ -54,28 +53,24 @@ layout — plain JavaScript, no UI framework, no `shared/` — was chosen).
 **Process boundaries**: `contextIsolation: true` / `nodeIntegration: false` on
 the `BrowserWindow` (`src/main/index.js`). The renderer never `require()`s
 anything directly — `src/preload/api.js` exposes a narrow API on
-`window.pascalDependencyViewer`: `openFile()`, `openProject()`,
-`expandFromRootUnit(args)` (all `ipcRenderer.invoke`), plus
-`onGraphLoaded(cb)`/`onProjectLoaded(cb)` listeners.
+`window.pascalDependencyViewer`: `openProject()`, `expandFromRootUnit(args)`
+(both `ipcRenderer.invoke`), plus an `onProjectLoaded(cb)` listener.
 
 **Data flow**:
 
-1. File > Open / File > Open Project are native `Menu` items (`main/menu.js`);
-   their `click` handler runs the dialog + parsing directly in the main
-   process (`performOpenFile`/`performOpenProject`, in `main/ipc/file.js` /
-   `main/ipc/project.js`), then pushes the result to the renderer via
-   `mainWindow.webContents.send('app:graph-loaded' | 'app:project-loaded', ...)`.
-2. `performOpenFile`: `getUnitName`/`selectUsesFromSource` (from
-   `domain/parsePascalSource/`) parse the `.pas` source,
-   `mountDependenceGraphStructure` builds `{ nodes, edges }`.
-3. `performOpenProject`: `parseDprSource` builds the list of Project Units
+1. `File > Open Project` is the only native `Menu` item (`main/menu.js`);
+   its `click` handler runs the dialog + parsing directly in the main
+   process (`performOpenProject`, in `main/ipc/project.js`), then pushes
+   the result to the renderer via
+   `mainWindow.webContents.send('app:project-loaded', ...)`.
+2. `performOpenProject`: `parseDprSource` builds the list of Project Units
    from the `.dpr`.
-4. Clicking a Root Unit in the renderer calls `expandFromRootUnit` over IPC
+3. Clicking a Root Unit in the renderer calls `expandFromRootUnit` over IPC
    (`main/ipc/graph.js`'s `ipcMain.handle('expandFromRootUnit', ...)` →
    `performExpandFromRootUnit`), which reads the needed `.pas` files from
    disk in the **main** process (not the renderer) and runs
    `expandDependencyGraph`.
-5. The renderer (`renderer/components/graphView.js`) draws `{ nodes, edges }`
+4. The renderer (`renderer/components/graphView.js`) draws `{ nodes, edges }`
    with `vis-network`'s `Network` — no page reload involved; the same
    renderer session reacts to each IPC push.
 

@@ -6,6 +6,8 @@
   "main": ".vite/build/main.js",
   "private": true,
   "scripts": {
+    "preinstall": "node scripts/switch-env.js",
+    "prestart": "node scripts/switch-env.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "start": "electron-forge start",
     "package": "electron-forge package",

@@ -82,7 +82,13 @@ module.exports = {
   // moduleNameMapper: {},
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
-  // modulePathIgnorePatterns: [],
+  //
+  // node_modules is a symlink to node_modules_mac or node_modules_linux
+  // (see scripts/switch-env.js), so Jest's default node_modules exclusion
+  // no longer matches the real, on-disk sibling folders. Without this,
+  // Jest's haste map crawls both platform folders directly and errors on
+  // duplicate package names (e.g. "@jest/expect") whenever both exist.
+  modulePathIgnorePatterns: ["<rootDir>/node_modules_mac/", "<rootDir>/node_modules_linux/"],
 
   // Activates notifications for test results
   // notify: false,
@@ -150,9 +156,17 @@ module.exports = {
   // ],
 
   // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
-  // testPathIgnorePatterns: [
-  //   "/node_modules/"
-  // ],
+  //
+  // Same reasoning as modulePathIgnorePatterns above: node_modules_mac/
+  // and node_modules_linux/ are real sibling folders on disk (only one is
+  // ever aliased by the node_modules symlink), so the default "/node_modules/"
+  // pattern alone doesn't keep Jest from treating their *.test.js/*.spec.js
+  // files as project tests.
+  testPathIgnorePatterns: [
+    "/node_modules/",
+    "/node_modules_mac/",
+    "/node_modules_linux/",
+  ],
 
   // The regexp pattern or array of patterns that Jest uses to detect test files
   // testRegex: [],
