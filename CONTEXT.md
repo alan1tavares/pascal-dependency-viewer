@@ -50,11 +50,16 @@ origins. This is a property of the graph data, independent of what the
 graph screen currently displays.
 
 **View Filter**:
-Which Uses Clause Origins (`interface`, `implementation`, or both) are
-currently shown on the graph screen. Chosen on the graph screen itself,
-toggled independently per origin, and not persisted — changing it re-renders
-the already-computed Dependency Graph without re-walking the filesystem. At
-least one origin is always selected; defaults to both.
+Which parts of the already-computed Dependency Graph are currently shown on
+the graph screen. Chosen on the graph screen itself and not persisted —
+changing it re-renders the existing graph without re-walking the filesystem.
+Two independent axes, each toggled on its own:
+- **Uses Clause Origin** (`interface`, `implementation`, or both): at least
+  one is always selected; defaults to both.
+- **External Unit visibility**: shows or hides every External Unit node,
+  along with any edge pointing to one. No minimum-selected constraint (it
+  can be turned off on its own); defaults to hidden.
 _Avoid_: "Uses Clause Scope" — the old single setting that conflated
-generation-time walking with display-time filtering; replaced by the two
-terms above now that they vary independently.
+generation-time walking with display-time filtering; replaced by Uses
+Clause Origin now that origin visibility varies independently from graph
+generation, and independently again from External Unit visibility.

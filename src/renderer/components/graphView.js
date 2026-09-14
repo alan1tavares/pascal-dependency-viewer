@@ -41,8 +41,12 @@ export function renderGraph(nodesData, edgesData, rootUnitId) {
 function setUpViewFilter({ nodes, edges, nodesData, edgeOriginById, rootUnitId }) {
   const interfaceCheckbox = document.getElementById('viewFilterInterface');
   const implementationCheckbox = document.getElementById('viewFilterImplementation');
+  const externalCheckbox = document.getElementById('viewFilterExternal');
   interfaceCheckbox.checked = true;
   implementationCheckbox.checked = true;
+  externalCheckbox.checked = false;
+
+  const nodeGroupById = new Map(nodesData.map(node => [node.id, node.group]));
 
   function isOriginVisible(origin) {
     if (origin === ORIGIN_BOTH) {
@@ -54,11 +58,22 @@ function setUpViewFilter({ nodes, edges, nodesData, edgeOriginById, rootUnitId }
     return implementationCheckbox.checked;
   }
 
+  function isEdgeVisible(id, origin) {
+    if (!isOriginVisible(origin)) {
+      return false;
+    }
+    const [, to] = id.split('::');
+    if (nodeGroupById.get(to) === 'externalUnit' && !externalCheckbox.checked) {
+      return false;
+    }
+    return true;
+  }
+
   function applyViewFilter() {
     const visibleNodeIds = new Set([rootUnitId]);
 
     const edgeUpdates = Array.from(edgeOriginById, ([id, origin]) => {
-      const visible = isOriginVisible(origin);
+      const visible = isEdgeVisible(id, origin);
       if (visible) {
         const [from, to] = id.split('::');
         visibleNodeIds.add(from);
@@ -85,6 +100,7 @@ function setUpViewFilter({ nodes, edges, nodesData, edgeOriginById, rootUnitId }
 
   interfaceCheckbox.onchange = handleCheckboxChange;
   implementationCheckbox.onchange = handleCheckboxChange;
+  externalCheckbox.onchange = applyViewFilter;
 
   applyViewFilter();
 }
