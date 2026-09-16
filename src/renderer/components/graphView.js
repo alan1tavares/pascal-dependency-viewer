@@ -27,7 +27,11 @@ export function renderGraph(nodesData, edgesData, rootUnitId) {
     projectUnit: { shape: 'ellipse', color: '#97C2FC' },
     externalUnit: { shape: 'box', color: '#D3D3D3' },
   };
-  const physics = { stabilization: { iterations: 200 } };
+  const physics = {
+    solver: 'forceAtlas2Based',
+    forceAtlas2Based: { avoidOverlap: 1, springLength: 100, centralGravity: 0.05 },
+    stabilization: { iterations: 200 },
+  };
   const options = { edges: { arrows }, groups, physics };
   const network = new Network(container, data, options);
 
