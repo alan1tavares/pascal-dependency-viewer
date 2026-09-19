@@ -1,0 +1,117 @@
+name: Build and Release
+
+# Triggered by a calendar release tag: vYY.MM.DD (two-digit year, month, day),
+# e.g. v26.09.17 for 2026-09-17. Not semantic versioning — see
+# docs/adr/0004-multiplatform-release-build-triggered-by-calendar-tag.md.
+#
+# GitHub's tag-filter glob does support [0-9] character classes, so this
+# already restricts each segment to exactly two digits. The `validate-tag`
+# job adds an explicit regex guard as a defensive second layer.
+on:
+  push:
+    tags:
+      - 'v[0-9][0-9].[0-9][0-9].[0-9][0-9]'
+
+jobs:
+  validate-tag:
+    name: Validate tag format
+    runs-on: ubuntu-latest
+    outputs:
+      app-version: ${{ steps.parse.outputs.app-version }}
+    steps:
+      - name: Reject tags that only look like vYY.MM.DD
+        run: |
+          TAG="${{ github.ref_name }}"
+          if [[ ! "$TAG" =~ ^v[0-9]{2}\.[0-9]{2}\.[0-9]{2}$ ]]; then
+            echo "::error::Tag '$TAG' does not match the required vYY.MM.DD calendar format (example: v26.09.17)."
+            exit 1
+          fi
+
+      - name: Derive a semver-safe app version from the tag
+        id: parse
+        run: |
+          TAG="${{ github.ref_name }}"
+          RAW="${TAG#v}"
+          IFS='.' read -r YEAR MONTH DAY <<< "$RAW"
+          # `10#` forces base-10 parsing so bash doesn't misread a leading
+          # zero (e.g. "09") as an invalid octal literal. node-semver (and
+          # therefore npm and the Squirrel maker) reject leading zeros in
+          # version segments, so "26.09.17" is invalid semver but "26.9.17"
+          # is valid — this reassembles the tag without the padding.
+          VERSION="$((10#$YEAR)).$((10#$MONTH)).$((10#$DAY))"
+          echo "Tag $TAG -> app version $VERSION (CI-only, never committed)"
+          echo "app-version=$VERSION" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build (${{ matrix.os }})
+    needs: validate-tag
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install rpmbuild (Linux only)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set CI-only app version (not committed)
+        run: npm version "${{ needs.validate-tag.outputs.app-version }}" --no-git-tag-version --allow-same-version
+
+      - name: Build installers
+        run: npm run make
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ matrix.os }}
+          path: |
+            out/make/**/*.zip
+            out/make/**/*.deb
+            out/make/**/*.rpm
+            out/make/**/*.exe
+            out/make/**/*.nupkg
+            out/make/**/RELEASES
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Publish GitHub Release
+    needs: [validate-tag, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all installers
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          mapfile -d '' FILES < <(find dist -type f -print0)
+          if [ "${#FILES[@]}" -eq 0 ]; then
+            echo "::error::No installer files were downloaded; refusing to publish an empty release."
+            exit 1
+          fi
+          gh release create "${{ github.ref_name }}" "${FILES[@]}" \
+            --title "${{ github.ref_name }}" \
+            --generate-notes

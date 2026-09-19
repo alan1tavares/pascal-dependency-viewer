@@ -2,6 +2,10 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 
+// CI starts from a clean checkout; the symlink dance is a local-dev workaround
+// and fails on Windows runners (EPERM on rename).
+if (process.env.CI) process.exit(0);
+
 const platform = os.platform(); // 'darwin' for macOS, 'linux' for Linux
 const targetDir = platform === 'darwin' ? 'node_modules_mac' : 'node_modules_linux';
 
