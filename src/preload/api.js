@@ -8,4 +8,9 @@ export const api = {
     ipcRenderer.on('app:project-loaded', listener);
     return () => ipcRenderer.removeListener('app:project-loaded', listener);
   },
+  onShowRootUnitSelection: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on('app:show-root-unit-selection', listener);
+    return () => ipcRenderer.removeListener('app:show-root-unit-selection', listener);
+  },
 };

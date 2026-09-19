@@ -37,11 +37,13 @@ layout — plain JavaScript, no UI framework, no `shared/` — was chosen).
   `project.js` (`performOpenProject`/`openProject`), `graph.js`
   (`performExpandFromRootUnit`/`expandFromRootUnit`). `project.js` also
   exports `performOpenProject` so `menu.js` can reuse the same logic for
-  the native `File` menu.
+  the native `Arquivo` menu.
 - `src/main/services/fileSystem.js`: thin wrapper around
   `fs.readFileSync(filePath, 'utf-8')`, used by both `ipc/` modules.
 - `src/main/menu.js`: `buildMenu(mainWindow, { performOpenProject })`
-  — builds the `File > Open Project` / `viewMenu` template.
+  — builds the native menu template: `Arquivo` (`Abrir Projeto`, `Sair`),
+  `Edição` (`Selecionar Unit`, `Selecionar Método`), and `{ role:
+  "viewMenu" }`.
 - `src/preload/index.js` + `src/preload/api.js`: `preload/api.js` is the
   plain object exposed on `window.pascalDependencyViewer`;
   `preload/index.js` is just the `contextBridge.exposeInMainWorld` call.
@@ -54,15 +56,16 @@ layout — plain JavaScript, no UI framework, no `shared/` — was chosen).
 the `BrowserWindow` (`src/main/index.js`). The renderer never `require()`s
 anything directly — `src/preload/api.js` exposes a narrow API on
 `window.pascalDependencyViewer`: `openProject()`, `expandFromRootUnit(args)`
-(both `ipcRenderer.invoke`), plus an `onProjectLoaded(cb)` listener.
+(both `ipcRenderer.invoke`), plus `onProjectLoaded(cb)` and
+`onShowRootUnitSelection(cb)` listeners.
 
 **Data flow**:
 
-1. `File > Open Project` is the only native `Menu` item (`main/menu.js`);
-   its `click` handler runs the dialog + parsing directly in the main
-   process (`performOpenProject`, in `main/ipc/project.js`), then pushes
-   the result to the renderer via
-   `mainWindow.webContents.send('app:project-loaded', ...)`.
+1. `Arquivo > Abrir Projeto` is a native `Menu` item (`main/menu.js`); its
+   `click` handler runs the dialog + parsing directly in the main process
+   (`performOpenProject`, in `main/ipc/project.js`), then pushes the result
+   to the renderer via `mainWindow.webContents.send('app:project-loaded',
+   ...)`. `Arquivo > Sair` (`role: "quit"`) closes the app.
 2. `performOpenProject`: `parseDprSource` builds the list of Project Units
    from the `.dpr`.
 3. Clicking a Root Unit in the renderer calls `expandFromRootUnit` over IPC
@@ -73,6 +76,16 @@ anything directly — `src/preload/api.js` exposes a narrow API on
 4. The renderer (`renderer/components/graphView.js`) draws `{ nodes, edges }`
    with `vis-network`'s `Network` — no page reload involved; the same
    renderer session reacts to each IPC push.
+5. `Edição > Selecionar Unit`'s `click` handler (`main/menu.js`) just sends
+   `mainWindow.webContents.send('app:show-root-unit-selection')`, with no
+   payload — the main process holds no Project state. The renderer
+   (`src/renderer/index.js`) keeps the last `{ projectUnits, projectDir }`
+   received via `onProjectLoaded` in a module-level variable, and re-renders
+   the Root Unit selection screen with it on
+   `onShowRootUnitSelection`; if no Project has been opened yet in the
+   session, the click is a no-op. `Edição > Selecionar Método` just shows a
+   `dialog.showMessageBox` placeholder alert — no IPC, no renderer state
+   change.
 
 **Cross-process communication is IPC** (`ipcMain.handle`/`ipcRenderer.invoke`
 for renderer-initiated calls, `webContents.send` for main-initiated pushes
