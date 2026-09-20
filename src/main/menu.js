@@ -7,6 +7,7 @@ export function buildMenu(mainWindow, { performOpenProject }) {
       submenu: [
         {
           label: "Abrir Projeto",
+          accelerator: "CmdOrCtrl+O",
           click: async () => {
             const project = await performOpenProject();
             if (project)

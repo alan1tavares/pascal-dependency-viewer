@@ -28,6 +28,12 @@ test('monta o menu "Arquivo" com "Abrir Projeto" e "Sair" nesta ordem', () => {
   expect(arquivoMenu.submenu[1].role).toBe('quit');
 });
 
+test('"Abrir Projeto" tem o atalho CmdOrCtrl+O (Cmd no macOS, Ctrl no Linux)', () => {
+  const { template } = buildTestMenu();
+
+  expect(template[0].submenu[0].accelerator).toBe('CmdOrCtrl+O');
+});
+
 test('monta o menu "Edição" com "Selecionar Unit" e "Selecionar Método" nesta ordem', () => {
   const { template } = buildTestMenu();
 

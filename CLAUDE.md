@@ -41,8 +41,9 @@ layout — plain JavaScript, no UI framework, no `shared/` — was chosen).
 - `src/main/services/fileSystem.js`: thin wrapper around
   `fs.readFileSync(filePath, 'utf-8')`, used by both `ipc/` modules.
 - `src/main/menu.js`: `buildMenu(mainWindow, { performOpenProject })`
-  — builds the native menu template: `Arquivo` (`Abrir Projeto`, `Sair`),
-  `Edição` (`Selecionar Unit`, `Selecionar Método`), and `{ role:
+  — builds the native menu template: `Arquivo` (`Abrir Projeto`, with the
+  `CmdOrCtrl+O` accelerator — `Cmd+O` on macOS, `Ctrl+O` on Linux — and
+  `Sair`), `Edição` (`Selecionar Unit`, `Selecionar Método`), and `{ role:
   "viewMenu" }`.
 - `src/preload/index.js` + `src/preload/api.js`: `preload/api.js` is the
   plain object exposed on `window.pascalDependencyViewer`;
@@ -61,8 +62,9 @@ anything directly — `src/preload/api.js` exposes a narrow API on
 
 **Data flow**:
 
-1. `Arquivo > Abrir Projeto` is a native `Menu` item (`main/menu.js`); its
-   `click` handler runs the dialog + parsing directly in the main process
+1. `Arquivo > Abrir Projeto` (shortcut `CmdOrCtrl+O`, so the keyboard
+   triggers the same `click` handler) is a native `Menu` item
+   (`main/menu.js`); its `click` handler runs the dialog + parsing directly in the main process
    (`performOpenProject`, in `main/ipc/project.js`), then pushes the result
    to the renderer via `mainWindow.webContents.send('app:project-loaded',
    ...)`. `Arquivo > Sair` (`role: "quit"`) closes the app.
