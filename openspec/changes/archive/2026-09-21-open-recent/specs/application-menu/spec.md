@@ -1,11 +1,9 @@
-# application-menu
+## RENAMED Requirements
 
-## Purpose
+- FROM: `### Requirement: Menu `Arquivo` com "Abrir Projeto" e "Sair"`
+- TO: `### Requirement: Menu `Arquivo` com "Abrir projeto (.dpr)", "Abrir recente" e "Sair"`
 
-Define a estrutura do menu nativo da aplicação (barra de menus do Electron):
-os menus `Arquivo` e `Edição` e as opções que cada um expõe ao usuário.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Menu `Arquivo` com "Abrir projeto (.dpr)", "Abrir recente" e "Sair"
 O sistema SHALL expor um menu nativo rotulado `Arquivo` contendo exatamente
@@ -37,7 +35,7 @@ capability `recent-projects`.
 - **THEN** exatamente três opções são exibidas, nesta ordem: `Abrir projeto
   (.dpr)`, `Abrir recente` e `Sair`
 
-#### Scenario: Atalho exibido no item "Abrir projeto (.dpr)"
+#### Scenario: Atalho exibido no item "Abrir Projeto"
 - **WHEN** o usuário abre o menu `Arquivo` no macOS ou no Linux
 - **THEN** o item `Abrir projeto (.dpr)` exibe o atalho `Cmd+O` (macOS) ou
   `Ctrl+O` (Linux) ao lado do rótulo
@@ -47,7 +45,7 @@ capability `recent-projects`.
 - **THEN** o rótulo do item `Abrir recente` inclui a dica `⌘K R` (macOS) ou
   `Ctrl+K R` (Linux)
 
-#### Scenario: Usuário clica em "Abrir projeto (.dpr)"
+#### Scenario: Usuário clica em "Abrir Projeto"
 - **WHEN** o usuário clica em `Abrir projeto (.dpr)` e escolhe um arquivo
   `.dpr` no diálogo nativo
 - **THEN** o app lê e parseia o arquivo com `parseDprSource` e envia
@@ -72,7 +70,7 @@ capability `recent-projects`.
 - **THEN** nenhum evento `app:project-loaded` é enviado e o estado atual do
   renderer não muda
 
-#### Scenario: Usuário clica em "Abrir projeto (.dpr)" e cancela o diálogo
+#### Scenario: Usuário clica em "Abrir Projeto" e cancela o diálogo
 - **WHEN** o usuário clica em `Abrir projeto (.dpr)` e fecha o diálogo
   nativo sem escolher um arquivo
 - **THEN** nenhum evento `app:project-loaded` é enviado e o estado atual do
@@ -82,32 +80,6 @@ capability `recent-projects`.
 - **WHEN** o usuário clica em `Sair`
 - **THEN** a aplicação é encerrada, sem exigir nenhuma confirmação
   adicional
-
-### Requirement: Menu `Edição` com "Selecionar Unit" e "Selecionar Método"
-O sistema SHALL expor um menu nativo rotulado `Edição` contendo exatamente
-duas opções, nesta ordem: `Selecionar Unit` e `Selecionar Método`.
-
-#### Scenario: Usuário abre o menu `Edição`
-- **WHEN** o usuário abre o menu `Edição`
-- **THEN** exatamente duas opções são exibidas, nesta ordem: `Selecionar
-  Unit` e `Selecionar Método`
-
-### Requirement: "Selecionar Método" exibe apenas um aviso de funcionalidade pendente
-Ao clicar em `Selecionar Método`, o sistema SHALL exibir um diálogo/alerta
-nativo informando que a funcionalidade ainda não foi implementada (por
-exemplo, com o texto "Selecionar Método ainda será implementado"). Nenhum
-outro efeito colateral SHALL ocorrer — nenhuma chamada IPC, nenhuma
-alteração de estado do renderer, nenhuma navegação de tela.
-
-#### Scenario: Usuário clica em "Selecionar Método"
-- **WHEN** o usuário clica em `Selecionar Método`
-- **THEN** um diálogo é exibido informando que a funcionalidade ainda será
-  implementada, e nada mais acontece
-
-#### Scenario: Fechar o diálogo não tem efeito colateral
-- **WHEN** o usuário fecha o diálogo exibido por `Selecionar Método`
-- **THEN** o estado do app permanece exatamente como estava antes do
-  clique em `Selecionar Método`
 
 ### Requirement: "Selecionar Unit" reabre a tela de seleção de Root Unit
 Ao clicar em `Selecionar Unit`, o sistema SHALL reabrir a tela de

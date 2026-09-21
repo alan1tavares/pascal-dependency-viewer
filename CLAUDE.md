@@ -31,45 +31,73 @@ it's the part covered by tests (see
 `docs/adr/0002-src-layout-main-preload-renderer-domain.md` for why this
 layout — plain JavaScript, no UI framework, no `shared/` — was chosen).
 
-- `src/main/index.js`: creates the `BrowserWindow`, registers the two IPC
-  handlers from `main/ipc/`, and builds the menu via `main/menu.js`.
+- `src/main/index.js`: creates the `BrowserWindow`, registers the IPC
+  handlers from `main/ipc/`, wires the `Cmd/Ctrl+K R` key sequence (see
+  below) on the window's `before-input-event`, and builds the menu via
+  `main/menu.js`.
 - `src/main/ipc/{project,graph}.js`: one module per IPC domain —
-  `project.js` (`performOpenProject`/`openProject`), `graph.js`
+  `project.js` (`loadProject`/`performOpenProject`, and the `openProject`,
+  `recentProjects:list` and `recentProjects:open` handlers), `graph.js`
   (`performExpandFromRootUnit`/`expandFromRootUnit`). `project.js` also
   exports `performOpenProject` so `menu.js` can reuse the same logic for
-  the native `Arquivo` menu.
+  the native `Arquivo` menu. `loadProject(filePath)` reads + parses the
+  `.dpr` and, only after the parse succeeds, registers it as a Recent
+  Project.
 - `src/main/services/fileSystem.js`: thin wrapper around
   `fs.readFileSync(filePath, 'utf-8')`, used by both `ipc/` modules.
-- `src/main/menu.js`: `buildMenu(mainWindow, { performOpenProject })`
-  — builds the native menu template: `Arquivo` (`Abrir Projeto`, with the
-  `CmdOrCtrl+O` accelerator — `Cmd+O` on macOS, `Ctrl+O` on Linux — and
-  `Sair`), `Edição` (`Selecionar Unit`, `Selecionar Método`), and `{ role:
-  "viewMenu" }`.
+- `src/main/services/recentProjects.js`: `list()`/`add(path)`/`remove(path)`
+  over `recent-projects.json` (a JSON array of `.dpr` paths) in
+  `app.getPath('userData')`. A missing/invalid file reads as an empty list
+  and write failures are swallowed. The ordering/dedupe/limit rules live in
+  the pure `src/domain/recentProjects/` (also holds the dialog's
+  `filterRecentProjects`/`describeRecentProject`).
+- `src/main/keySequence.js`: `createKeySequence({ isMac, onComplete })`
+  returns a handler for `before-input-event` inputs. Electron menu
+  accelerators can't express a chord, so `Cmd+K` (macOS) / `Ctrl+K` arms the
+  sequence for 1.5 s and is consumed; the next `R` (with or without the
+  modifier still held — which also stops `Cmd+R` reloading) completes it and
+  is consumed; any other non-modifier key or the timeout cancels it.
+- `src/main/menu.js`: `buildMenu(mainWindow, { performOpenProject, platform })`
+  — builds the native menu template: `Arquivo` (`Abrir projeto (.dpr)`, with
+  the `CmdOrCtrl+O` accelerator — `Cmd+O` on macOS, `Ctrl+O` on Linux —,
+  `Abrir recente` and `Sair`), `Edição` (`Selecionar Unit`, `Selecionar
+  Método`), and `{ role: "viewMenu" }`. `Abrir recente` has no native
+  accelerator; the `⌘K R` / `Ctrl+K R` hint is part of its label.
 - `src/preload/index.js` + `src/preload/api.js`: `preload/api.js` is the
   plain object exposed on `window.pascalDependencyViewer`;
   `preload/index.js` is just the `contextBridge.exposeInMainWorld` call.
-- `src/renderer/index.js` + `src/renderer/components/{graphView,rootUnitSelection}.js`:
+- `src/renderer/index.js` + `src/renderer/components/{graphView,rootUnitSelection,openRecentDialog}.js`:
   `index.js` is the entrypoint (wires the IPC listeners below);
   `graphView.js` renders the `vis-network` graph, `rootUnitSelection.js`
-  renders the Root Unit search/listing screen.
+  renders the Root Unit search/listing screen, `openRecentDialog.js` drives
+  the `Abrir recente` overlay (markup/styles live in `index.html`).
 
 **Process boundaries**: `contextIsolation: true` / `nodeIntegration: false` on
 the `BrowserWindow` (`src/main/index.js`). The renderer never `require()`s
 anything directly — `src/preload/api.js` exposes a narrow API on
-`window.pascalDependencyViewer`: `openProject()`, `expandFromRootUnit(args)`
-(both `ipcRenderer.invoke`), plus `onProjectLoaded(cb)` and
-`onShowRootUnitSelection(cb)` listeners.
+`window.pascalDependencyViewer`: `openProject()`, `expandFromRootUnit(args)`,
+`listRecentProjects()` and `openRecentProject(path)` (all
+`ipcRenderer.invoke`), plus `onProjectLoaded(cb)`,
+`onShowRootUnitSelection(cb)` and `onShowOpenRecent(cb)` listeners.
 
 **Data flow**:
 
-1. `Arquivo > Abrir Projeto` (shortcut `CmdOrCtrl+O`, so the keyboard
+1. `Arquivo > Abrir projeto (.dpr)` (shortcut `CmdOrCtrl+O`, so the keyboard
    triggers the same `click` handler) is a native `Menu` item
    (`main/menu.js`); its `click` handler runs the dialog + parsing directly in the main process
    (`performOpenProject`, in `main/ipc/project.js`), then pushes the result
    to the renderer via `mainWindow.webContents.send('app:project-loaded',
    ...)`. `Arquivo > Sair` (`role: "quit"`) closes the app.
 2. `performOpenProject`: `parseDprSource` builds the list of Project Units
-   from the `.dpr`.
+   from the `.dpr`, and the path is registered as a Recent Project.
+   `Arquivo > Abrir recente` (or the `Cmd/Ctrl+K R` sequence) sends
+   `app:show-open-recent` to the renderer, which fetches the list over
+   `recentProjects:list` and shows the overlay (filter, `↑`/`↓`/`Enter`/
+   `Esc`, click). Picking an item calls `recentProjects:open`: the main
+   process runs `loadProject` and pushes the same `app:project-loaded` event
+   (so everything after step 2 is shared). If the file can't be read, it
+   shows an error box, removes the entry from the persisted list and pushes
+   nothing. The list isn't checked for missing files when the overlay opens.
 3. Clicking a Root Unit in the renderer calls `expandFromRootUnit` over IPC
    (`main/ipc/graph.js`'s `ipcMain.handle('expandFromRootUnit', ...)` →
    `performExpandFromRootUnit`), which reads the needed `.pas` files from
@@ -91,8 +119,9 @@ anything directly — `src/preload/api.js` exposes a narrow API on
 
 **Cross-process communication is IPC** (`ipcMain.handle`/`ipcRenderer.invoke`
 for renderer-initiated calls, `webContents.send` for main-initiated pushes
-from the menu) — there is no `electron-store`/shared-blob step and no
-`reloadMainWindow()`; navigating between the Root Unit selection screen and
+from the menu or from the `Cmd/Ctrl+K R` key sequence) — there is no
+`electron-store`/shared-blob step (the only persisted state is the Recent
+Projects JSON in `userData`) and no `reloadMainWindow()`; navigating between the Root Unit selection screen and
 the graph screen is just DOM manipulation inside one page load.
 
 **Graph shape convention** (`domain/expandDependencyGraph/index.js`): node

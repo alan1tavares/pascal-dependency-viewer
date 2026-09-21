@@ -15,6 +15,12 @@ each paired with its file path (`UnitA in 'UnitA.pas'`), giving a direct
 Unit → file mapping.
 _Avoid_: `.dproj`, `.groupproj` — not supported as the "project" artifact.
 
+**Recent Project**:
+A Project the user has successfully opened before, identified by the path of
+its `.dpr` file. Recent Projects are listed most-recently-opened first, with
+no duplicates — reopening one moves it to the top — and only the latest 10
+are kept. Persisted across sessions, unlike the currently open Project.
+
 **Project Unit**:
 A `uses` entry inside a Project's `.dpr` that has an explicit `in 'path'`.
 These are the project's own units — the only ones searchable/selectable as a
