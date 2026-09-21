@@ -3,6 +3,7 @@ import path from "node:path";
 import started from "electron-squirrel-startup";
 
 import { buildMenu } from "./menu.js";
+import { createKeySequence } from "./keySequence.js";
 import { performOpenProject, registerProjectHandler } from "./ipc/project.js";
 import { registerGraphHandler } from "./ipc/graph.js";
 
@@ -26,6 +27,14 @@ const createWindow = () => {
       contextIsolation: true,
       nodeIntegration: false,
     },
+  });
+
+  const handleKeySequence = createKeySequence({
+    isMac: process.platform === "darwin",
+    onComplete: () => mainWindow.webContents.send("app:show-open-recent"),
+  });
+  mainWindow.webContents.on("before-input-event", (event, input) => {
+    if (handleKeySequence(input)) event.preventDefault();
   });
 
   // and load the index.html of the app.

@@ -41,6 +41,84 @@
       #viewFilterPanel label {
         display: block;
       }
+
+      #openRecentOverlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        background: rgba(0, 0, 0, 0.3);
+        font-family: sans-serif;
+        font-size: 14px;
+      }
+
+      #openRecentDialog {
+        width: 560px;
+        max-width: calc(100% - 32px);
+        margin: 48px auto 0;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+      }
+
+      #openRecentInputRow {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      #openRecentPrefix {
+        flex: none;
+        margin-right: 8px;
+        padding: 2px 8px;
+        background: #e8e8e8;
+        border-radius: 3px;
+        color: #333;
+        user-select: none;
+      }
+
+      #openRecentInput {
+        flex: 1;
+        min-width: 0;
+        border: none;
+        outline: none;
+        font: inherit;
+      }
+
+      #openRecentList {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        max-height: 320px;
+        overflow-y: auto;
+      }
+
+      #openRecentList li {
+        padding: 6px 12px;
+        cursor: pointer;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+
+      #openRecentList li.selected {
+        background: #d6e9ff;
+      }
+
+      #openRecentList .recentDir {
+        display: block;
+        color: #666;
+        font-size: 12px;
+      }
+
+      #openRecentEmpty {
+        display: none;
+        padding: 12px;
+        color: #666;
+      }
     </style>
   </head>
   <body>
@@ -65,6 +143,17 @@
         <input type="checkbox" id="viewFilterExternal" />
         Unidades Externas
       </label>
+    </div>
+
+    <div id="openRecentOverlay">
+      <div id="openRecentDialog">
+        <div id="openRecentInputRow">
+          <span id="openRecentPrefix">Abrir recente</span>
+          <input type="text" id="openRecentInput" autocomplete="off" />
+        </div>
+        <ul id="openRecentList"></ul>
+        <div id="openRecentEmpty">Nenhum projeto recente</div>
+      </div>
     </div>
 
     <script type="module" src="/src/renderer/index.js"></script>
