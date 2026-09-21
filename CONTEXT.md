@@ -21,6 +21,23 @@ its `.dpr` file. Recent Projects are listed most-recently-opened first, with
 no duplicates — reopening one moves it to the top — and only the latest 10
 are kept. Persisted across sessions, unlike the currently open Project.
 
+**Command**:
+A named action of the app that the user can trigger by name. Has a label
+and, optionally, a keyboard shortcut. Initial Commands: `Abrir projeto
+(.dpr)`, `Abrir recente` and `Selecionar Unit`. A Command that cannot do
+anything in the current state (e.g. `Selecionar Unit` before any Project has
+been opened) is not offered.
+_Avoid_: "menu item" or "action" — imprecise; the native menu is just one of
+the places a Command can be triggered from.
+
+**Command Palette**:
+The search overlay, shown at the top of the screen, where the user filters
+and triggers a Command. It has two modes: the list of Commands, and the list
+of Recent Projects (the `Abrir recente` mode, entered by choosing that
+Command or directly by its own shortcut).
+_Avoid_: "recent projects dialog" — that list is now a mode of the Command
+Palette, not a window of its own.
+
 **Project Unit**:
 A `uses` entry inside a Project's `.dpr` that has an explicit `in 'path'`.
 These are the project's own units — the only ones searchable/selectable as a

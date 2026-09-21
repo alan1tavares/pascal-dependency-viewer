@@ -35,14 +35,23 @@ layout — plain JavaScript, no UI framework, no `shared/` — was chosen).
   handlers from `main/ipc/`, wires the `Cmd/Ctrl+K R` key sequence (see
   below) on the window's `before-input-event`, and builds the menu via
   `main/menu.js`.
-- `src/main/ipc/{project,graph}.js`: one module per IPC domain —
+- `src/main/ipc/{project,graph,commands}.js`: one module per IPC domain —
   `project.js` (`loadProject`/`performOpenProject`, and the `openProject`,
   `recentProjects:list` and `recentProjects:open` handlers), `graph.js`
-  (`performExpandFromRootUnit`/`expandFromRootUnit`). `project.js` also
+  (`performExpandFromRootUnit`/`expandFromRootUnit`), `commands.js`
+  (`registerCommandsHandler`: the `commands:run` handler, which calls
+  `runCommand` with the caller's `event.sender`). `project.js` also
   exports `performOpenProject` so `menu.js` can reuse the same logic for
   the native `Arquivo` menu. `loadProject(filePath)` reads + parses the
   `.dpr` and, only after the parse succeeds, registers it as a Recent
   Project.
+- `src/main/commands.js`: `runCommand(id, { webContents, performOpenProject })`
+  — the single execution point of every Command (`openProject`,
+  `selectUnit`, `openRecent`), shared by the native menu and the Command
+  Palette. `openProject` runs the native dialog and pushes
+  `app:project-loaded` only if a Project was chosen; `selectUnit` pushes
+  `app:show-root-unit-selection`; `openRecent` pushes `app:show-open-recent`.
+  Unknown ids are ignored.
 - `src/main/services/fileSystem.js`: thin wrapper around
   `fs.readFileSync(filePath, 'utf-8')`, used by both `ipc/` modules.
 - `src/main/services/recentProjects.js`: `list()`/`add(path)`/`remove(path)`
@@ -61,39 +70,58 @@ layout — plain JavaScript, no UI framework, no `shared/` — was chosen).
   — builds the native menu template: `Arquivo` (`Abrir projeto (.dpr)`, with
   the `CmdOrCtrl+O` accelerator — `Cmd+O` on macOS, `Ctrl+O` on Linux —,
   `Abrir recente` and `Sair`), `Edição` (`Selecionar Unit`, `Selecionar
-  Método`), and `{ role: "viewMenu" }`. `Abrir recente` has no native
+  Método`), `Ferramentas` (`Paleta de Comandos`, `CmdOrCtrl+P`, which sends
+  `app:show-command-palette`), and `{ role: "viewMenu" }`. The `Arquivo`
+  items and `Selecionar Unit` call `runCommand` by Command id and take their
+  labels from the catalog in `domain/commands`. `Abrir recente` has no native
   accelerator; the `⌘K R` / `Ctrl+K R` hint is part of its label.
 - `src/preload/index.js` + `src/preload/api.js`: `preload/api.js` is the
-  plain object exposed on `window.pascalDependencyViewer`;
+  plain object exposed on `window.pascalDependencyViewer` (including
+  `platform`, the `process.platform` string the renderer uses to pick shortcut
+  hints);
   `preload/index.js` is just the `contextBridge.exposeInMainWorld` call.
-- `src/renderer/index.js` + `src/renderer/components/{graphView,rootUnitSelection,openRecentDialog}.js`:
-  `index.js` is the entrypoint (wires the IPC listeners below);
-  `graphView.js` renders the `vis-network` graph, `rootUnitSelection.js`
-  renders the Root Unit search/listing screen, `openRecentDialog.js` drives
-  the `Abrir recente` overlay (markup/styles live in `index.html`).
+- `src/renderer/index.js` + `src/renderer/components/{graphView,rootUnitSelection,commandPalette}.js`:
+  `index.js` is the entrypoint (wires the IPC listeners below, tells the
+  palette whether a Project is open, and closes the palette on
+  `app:project-loaded`); `graphView.js` renders the `vis-network` graph,
+  `rootUnitSelection.js` renders the Root Unit search/listing screen,
+  `commandPalette.js` drives the Command Palette overlay (markup/styles live
+  in `index.html`). It has two modes: the Command list (`Digite um comando`,
+  no prefix) and the `Abrir recente` list of Recent Projects (fixed
+  `Abrir recente` prefix). `Esc` in the recents mode goes back to the Command
+  list when the mode was entered through the `Abrir recente` Command, and
+  closes the palette when it was entered by `Cmd/Ctrl+K R` or the menu.
+- `src/domain/commands/`: the Command catalog (`COMMANDS`: `openProject`,
+  `openRecent`, `selectUnit`) plus the pure `availableCommands`
+  (`selectUnit` needs a Project), `filterCommands` (case- and
+  accent-insensitive substring) and `shortcutHint`.
 
 **Process boundaries**: `contextIsolation: true` / `nodeIntegration: false` on
 the `BrowserWindow` (`src/main/index.js`). The renderer never `require()`s
 anything directly — `src/preload/api.js` exposes a narrow API on
 `window.pascalDependencyViewer`: `openProject()`, `expandFromRootUnit(args)`,
-`listRecentProjects()` and `openRecentProject(path)` (all
+`listRecentProjects()`, `openRecentProject(path)` and `runCommand(id)` (all
 `ipcRenderer.invoke`), plus `onProjectLoaded(cb)`,
-`onShowRootUnitSelection(cb)` and `onShowOpenRecent(cb)` listeners.
+`onShowRootUnitSelection(cb)`, `onShowOpenRecent(cb)` and
+`onShowCommandPalette(cb)` listeners.
 
 **Data flow**:
 
 1. `Arquivo > Abrir projeto (.dpr)` (shortcut `CmdOrCtrl+O`, so the keyboard
    triggers the same `click` handler) is a native `Menu` item
-   (`main/menu.js`); its `click` handler runs the dialog + parsing directly in the main process
-   (`performOpenProject`, in `main/ipc/project.js`), then pushes the result
-   to the renderer via `mainWindow.webContents.send('app:project-loaded',
-   ...)`. `Arquivo > Sair` (`role: "quit"`) closes the app.
+   (`main/menu.js`); its `click` handler calls `runCommand('openProject')`
+   (`main/commands.js`), which runs the dialog + parsing directly in the main
+   process (`performOpenProject`, in `main/ipc/project.js`), then pushes the
+   result to the renderer via `webContents.send('app:project-loaded',
+   ...)` — only if a file was chosen. `Arquivo > Sair` (`role: "quit"`)
+   closes the app.
 2. `performOpenProject`: `parseDprSource` builds the list of Project Units
    from the `.dpr`, and the path is registered as a Recent Project.
    `Arquivo > Abrir recente` (or the `Cmd/Ctrl+K R` sequence) sends
-   `app:show-open-recent` to the renderer, which fetches the list over
-   `recentProjects:list` and shows the overlay (filter, `↑`/`↓`/`Enter`/
-   `Esc`, click). Picking an item calls `recentProjects:open`: the main
+   `app:show-open-recent` to the renderer, which opens the Command Palette
+   directly in its recents mode: it fetches the list over
+   `recentProjects:list` and shows it (filter, `↑`/`↓`/`Enter`/`Esc`,
+   click). Picking an item calls `recentProjects:open`: the main
    process runs `loadProject` and pushes the same `app:project-loaded` event
    (so everything after step 2 is shared). If the file can't be read, it
    shows an error box, removes the entry from the persisted list and pushes
@@ -116,10 +144,22 @@ anything directly — `src/preload/api.js` exposes a narrow API on
    session, the click is a no-op. `Edição > Selecionar Método` just shows a
    `dialog.showMessageBox` placeholder alert — no IPC, no renderer state
    change.
+6. `Ferramentas > Paleta de Comandos` (shortcut `CmdOrCtrl+P`) sends
+   `app:show-command-palette`, and the renderer opens the Command Palette in
+   its Command list mode. The list is `availableCommands(COMMANDS, {
+   hasProject })` (so `Selecionar Unit` only shows up once a Project has been
+   loaded in the session) filtered by `filterCommands`, with the shortcut
+   hint on each row. Choosing a Command closes the palette and calls
+   `runCommand(id)` over `commands:run` (the same `runCommand` the menu
+   uses), except `Abrir recente`, which switches the palette to its recents
+   mode without any IPC (see step 2). If the native dialog opened by
+   `Abrir projeto (.dpr)` is cancelled, nothing is pushed and the palette
+   stays closed.
 
 **Cross-process communication is IPC** (`ipcMain.handle`/`ipcRenderer.invoke`
 for renderer-initiated calls, `webContents.send` for main-initiated pushes
-from the menu or from the `Cmd/Ctrl+K R` key sequence) — there is no
+from the menu or from the `Cmd/Ctrl+K R` key sequence, and `commands:run` for
+Command Palette executions) — there is no
 `electron-store`/shared-blob step (the only persisted state is the Recent
 Projects JSON in `userData`) and no `reloadMainWindow()`; navigating between the Root Unit selection screen and
 the graph screen is just DOM manipulation inside one page load.
