@@ -42,7 +42,7 @@
         display: block;
       }
 
-      #openRecentOverlay {
+      #commandPaletteOverlay {
         display: none;
         position: fixed;
         inset: 0;
@@ -52,7 +52,7 @@
         font-size: 14px;
       }
 
-      #openRecentDialog {
+      #commandPaletteDialog {
         width: 560px;
         max-width: calc(100% - 32px);
         margin: 48px auto 0;
@@ -63,14 +63,14 @@
         overflow: hidden;
       }
 
-      #openRecentInputRow {
+      #commandPaletteInputRow {
         display: flex;
         align-items: center;
         padding: 8px 12px;
         border-bottom: 1px solid #ddd;
       }
 
-      #openRecentPrefix {
+      #commandPalettePrefix {
         flex: none;
         margin-right: 8px;
         padding: 2px 8px;
@@ -80,7 +80,7 @@
         user-select: none;
       }
 
-      #openRecentInput {
+      #commandPaletteInput {
         flex: 1;
         min-width: 0;
         border: none;
@@ -88,7 +88,7 @@
         font: inherit;
       }
 
-      #openRecentList {
+      #commandPaletteList {
         list-style: none;
         margin: 0;
         padding: 0;
@@ -96,7 +96,7 @@
         overflow-y: auto;
       }
 
-      #openRecentList li {
+      #commandPaletteList li {
         padding: 6px 12px;
         cursor: pointer;
         overflow: hidden;
@@ -104,17 +104,30 @@
         text-overflow: ellipsis;
       }
 
-      #openRecentList li.selected {
+      #commandPaletteList li.selected {
         background: #d6e9ff;
       }
 
-      #openRecentList .recentDir {
+      #commandPaletteList .recentDir {
         display: block;
         color: #666;
         font-size: 12px;
       }
 
-      #openRecentEmpty {
+      #commandPaletteList li.commandItem {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+      }
+
+      #commandPaletteList .commandHint {
+        flex: none;
+        color: #666;
+        font-size: 12px;
+      }
+
+      #commandPaletteEmpty {
         display: none;
         padding: 12px;
         color: #666;
@@ -145,14 +158,14 @@
       </label>
     </div>
 
-    <div id="openRecentOverlay">
-      <div id="openRecentDialog">
-        <div id="openRecentInputRow">
-          <span id="openRecentPrefix">Abrir recente</span>
-          <input type="text" id="openRecentInput" autocomplete="off" />
+    <div id="commandPaletteOverlay">
+      <div id="commandPaletteDialog">
+        <div id="commandPaletteInputRow">
+          <span id="commandPalettePrefix">Abrir recente</span>
+          <input type="text" id="commandPaletteInput" autocomplete="off" />
         </div>
-        <ul id="openRecentList"></ul>
-        <div id="openRecentEmpty">Nenhum projeto recente</div>
+        <ul id="commandPaletteList"></ul>
+        <div id="commandPaletteEmpty"></div>
       </div>
     </div>
 

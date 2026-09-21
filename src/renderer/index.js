@@ -1,17 +1,29 @@
 import { renderRootUnitSelection } from './components/rootUnitSelection.js';
-import { showOpenRecentDialog } from './components/openRecentDialog.js';
+import {
+  closeCommandPalette,
+  configureCommandPalette,
+  showCommandPalette,
+  showOpenRecent,
+} from './components/commandPalette.js';
 
 const api = window.pascalDependencyViewer;
 
 let lastProject = null;
 
+configureCommandPalette({ hasProject: () => lastProject !== null });
+
 api.onProjectLoaded((project) => {
   lastProject = project;
+  closeCommandPalette();
   renderRootUnitSelection(project.projectUnits, project.projectDir);
 });
 
+api.onShowCommandPalette(() => {
+  showCommandPalette();
+});
+
 api.onShowOpenRecent(() => {
-  showOpenRecentDialog();
+  showOpenRecent();
 });
 
 api.onShowRootUnitSelection(() => {

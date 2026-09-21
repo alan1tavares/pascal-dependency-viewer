@@ -10,6 +10,7 @@ jest.unstable_mockModule('electron', () => ({
 }));
 
 const { buildMenu } = await import('../menu.js');
+const { COMMANDS } = await import('../../domain/commands/index.js');
 
 function buildTestMenu(overrides = {}) {
   const mainWindow = { webContents: { send: jest.fn() } };
@@ -68,10 +69,47 @@ test('monta o menu "Edição" com "Selecionar Unit" e "Selecionar Método" nesta
   ]);
 });
 
-test('mantém { role: "viewMenu" } como terceira entrada', () => {
+test('monta o menu "Ferramentas" entre "Edição" e o viewMenu, com apenas "Paleta de Comandos"', () => {
   const { template } = buildTestMenu();
 
-  expect(template[2]).toEqual({ role: 'viewMenu' });
+  expect(template.map((entry) => entry.label ?? entry.role)).toEqual([
+    'Arquivo',
+    'Edição',
+    'Ferramentas',
+    'viewMenu',
+  ]);
+  const ferramentasMenu = template[2];
+  expect(ferramentasMenu.submenu.map((item) => item.label)).toEqual(['Paleta de Comandos']);
+});
+
+test('"Paleta de Comandos" tem o acelerador CmdOrCtrl+P (Cmd no macOS, Ctrl no Linux)', () => {
+  const { template } = buildTestMenu();
+
+  expect(template[2].submenu[0].accelerator).toBe('CmdOrCtrl+P');
+});
+
+test('"Paleta de Comandos" envia app:show-command-palette sem payload e sem abrir diálogo nativo', () => {
+  const { template, mainWindow, performOpenProject } = buildTestMenu();
+
+  template[2].submenu[0].click();
+
+  expect(mainWindow.webContents.send).toHaveBeenCalledWith('app:show-command-palette');
+  expect(performOpenProject).not.toHaveBeenCalled();
+});
+
+test('mantém { role: "viewMenu" } como quarta entrada', () => {
+  const { template } = buildTestMenu();
+
+  expect(template[3]).toEqual({ role: 'viewMenu' });
+});
+
+test('os rótulos de "Arquivo" e "Edição" batem com os do catálogo de Commands', () => {
+  const { template } = buildTestMenu({ platform: 'linux' });
+  const catalogLabel = (id) => COMMANDS.find((command) => command.id === id).label;
+
+  expect(template[0].submenu[0].label).toBe(catalogLabel('openProject'));
+  expect(template[0].submenu[1].label).toBe(`${catalogLabel('openRecent')}  Ctrl+K R`);
+  expect(template[1].submenu[0].label).toBe(catalogLabel('selectUnit'));
 });
 
 test('"Abrir projeto (.dpr)" reaproveita performOpenProject e envia app:project-loaded', async () => {

@@ -1,55 +1,4 @@
-# recent-projects Specification
-
-## Purpose
-Guardar entre sessões os Projetos (`.dpr`) abertos anteriormente e permitir
-reabri-los rapidamente por um diálogo de busca acionado por menu ou atalho
-de teclado, sem passar pelo diálogo nativo de seleção de arquivo.
-
-## Requirements
-
-### Requirement: Registro persistente de Recent Projects
-O sistema SHALL registrar como Recent Project o caminho absoluto do `.dpr` de
-todo Project aberto com sucesso, seja por `Abrir projeto (.dpr)` seja por
-`Abrir recente`. "Com sucesso" significa que o arquivo foi lido e parseado; um
-diálogo nativo cancelado ou uma falha de leitura NÃO SHALL registrar nada.
-
-A lista SHALL ser ordenada do mais recente para o mais antigo, SHALL NÃO ter
-caminhos duplicados (reabrir um Project já presente o move para o topo) e
-SHALL guardar no máximo 10 entradas (ao exceder, a mais antiga é descartada).
-A lista SHALL persistir entre sessões do app.
-
-Se a lista persistida não existir ou estiver ilegível, o sistema SHALL tratá-la
-como vazia, sem exibir erro ao usuário.
-
-#### Scenario: Abrir um Project o registra como recente
-- **WHEN** o usuário abre `/proj/A.dpr` por `Abrir projeto (.dpr)` e o
-  arquivo é lido e parseado com sucesso
-- **THEN** `/proj/A.dpr` passa a ser a primeira entrada da lista de Recent
-  Projects
-
-#### Scenario: Reabrir um Project existente o move para o topo sem duplicar
-- **WHEN** a lista é `[B, A]` e o usuário abre `A`
-- **THEN** a lista passa a ser `[A, B]`, com uma única entrada para `A`
-
-#### Scenario: Limite de 10 entradas
-- **WHEN** a lista já tem 10 entradas e o usuário abre um Project que não
-  está nela
-- **THEN** o novo Project fica no topo e a entrada mais antiga é descartada,
-  mantendo 10 entradas
-
-#### Scenario: Diálogo nativo cancelado não registra nada
-- **WHEN** o usuário aciona `Abrir projeto (.dpr)` e cancela o diálogo
-  nativo
-- **THEN** a lista de Recent Projects permanece inalterada
-
-#### Scenario: Lista persiste entre sessões
-- **WHEN** o usuário abre um Project, encerra o app e o abre de novo
-- **THEN** esse Project aparece na lista de Recent Projects
-
-#### Scenario: Lista persistida ausente ou ilegível
-- **WHEN** o app é iniciado sem nenhuma lista persistida, ou com uma
-  ilegível
-- **THEN** a lista de Recent Projects é vazia e nenhum erro é exibido
+## MODIFIED Requirements
 
 ### Requirement: Diálogo "Abrir recente" acionado por menu ou atalho em sequência
 O sistema SHALL abrir o diálogo `Abrir recente` — o modo `Abrir recente` da
@@ -138,25 +87,6 @@ recente`.
 - **WHEN** não há nenhum Recent Project e o usuário abre o diálogo
 - **THEN** o diálogo exibe `Nenhum projeto recente`
 
-### Requirement: Filtro da lista de Recent Projects
-O texto digitado no input SHALL filtrar a lista por substring, sem diferenciar
-maiúsculas de minúsculas, comparada contra o nome do arquivo e contra o
-caminho completo. A cada mudança do filtro o primeiro item da lista filtrada
-SHALL ficar destacado.
-
-#### Scenario: Filtro por nome do arquivo
-- **WHEN** a lista tem `Vendas.dpr` e `Estoque.dpr` e o usuário digita `vend`
-- **THEN** apenas `Vendas.dpr` é exibido
-
-#### Scenario: Filtro por caminho
-- **WHEN** a lista tem `/cliente1/App.dpr` e `/cliente2/App.dpr` e o
-  usuário digita `cliente2`
-- **THEN** apenas `/cliente2/App.dpr` é exibido
-
-#### Scenario: Filtro sem resultado
-- **WHEN** nenhum Recent Project casa com o texto digitado
-- **THEN** o diálogo exibe `Nenhum projeto recente`
-
 ### Requirement: Navegação por teclado e fechamento do diálogo
 No diálogo, `↑` e `↓` SHALL mover o destaque entre os itens da lista filtrada,
 `Enter` SHALL abrir o item destacado, e clicar fora do diálogo SHALL fechá-lo
@@ -191,35 +121,3 @@ caso contrário (menu `Arquivo > Abrir recente` ou sequência `Cmd/Ctrl+K R`),
 #### Scenario: Abrir com clique
 - **WHEN** o usuário clica em um item da lista
 - **THEN** esse Recent Project é aberto
-
-### Requirement: Abrir um Recent Project
-Ao escolher um Recent Project, o sistema SHALL fechar o diálogo e seguir o
-mesmo fluxo de `Abrir projeto (.dpr)` a partir do arquivo escolhido, sem
-abrir o diálogo nativo de seleção de arquivo: ler e parsear o `.dpr` com
-`parseDprSource`, registrá-lo como recente (movendo-o para o topo) e notificar
-o renderer via `app:project-loaded` com `{ projectUnits, projectDir }`, que
-leva à tela de seleção de Root Unit.
-
-#### Scenario: Escolher um Recent Project
-- **WHEN** o usuário escolhe `A.dpr` no diálogo `Abrir recente`
-- **THEN** o diálogo fecha, `A.dpr` é lido e parseado, vai para o topo da
-  lista de Recent Projects e a tela de seleção de Root Unit é exibida com as
-  Project Units de `A.dpr`
-
-### Requirement: Recent Project cujo arquivo não existe mais
-A lista exibida no diálogo NÃO SHALL ser filtrada por existência de arquivo
-ao ser aberta. Se o usuário escolher um Recent Project cujo `.dpr` não existe
-mais (ou não pode ser lido), o sistema SHALL fechar o diálogo, exibir uma
-mensagem de erro nativa informando que o arquivo não foi encontrado, remover
-essa entrada da lista persistida e NÃO SHALL alterar a tela atual do app.
-
-#### Scenario: Arquivo removido do disco
-- **WHEN** `/proj/Velho.dpr` está na lista mas foi apagado, e o usuário o
-  escolhe
-- **THEN** uma mensagem de erro é exibida, `Velho.dpr` é removido da lista de
-  Recent Projects e a tela atual do app permanece como estava
-
-#### Scenario: Entrada de arquivo ausente continua visível até ser escolhida
-- **WHEN** um `.dpr` da lista foi apagado e o usuário abre o diálogo
-- **THEN** a entrada ainda é exibida (nenhuma verificação de existência é
-  feita ao abrir o diálogo)

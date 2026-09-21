@@ -1,28 +1,32 @@
 import { Menu, dialog } from "electron";
 
+import { COMMANDS } from "../domain/commands/index.js";
+import { runCommand } from "./commands.js";
+
+const labelOf = (id) => COMMANDS.find((command) => command.id === id).label;
+
 export function buildMenu(
   mainWindow,
   { performOpenProject, platform = process.platform },
 ) {
   const openRecentHint = platform === "darwin" ? "⌘K R" : "Ctrl+K R";
+  const run = (id) =>
+    runCommand(id, {
+      webContents: mainWindow.webContents,
+      performOpenProject,
+    });
   const template = [
     {
       label: "Arquivo",
       submenu: [
         {
-          label: "Abrir projeto (.dpr)",
+          label: labelOf("openProject"),
           accelerator: "CmdOrCtrl+O",
-          click: async () => {
-            const project = await performOpenProject();
-            if (project)
-              mainWindow.webContents.send("app:project-loaded", project);
-          },
+          click: () => run("openProject"),
         },
         {
-          label: `Abrir recente  ${openRecentHint}`,
-          click: () => {
-            mainWindow.webContents.send("app:show-open-recent");
-          },
+          label: `${labelOf("openRecent")}  ${openRecentHint}`,
+          click: () => run("openRecent"),
         },
         {
           label: "Sair",
@@ -34,10 +38,8 @@ export function buildMenu(
       label: "Edição",
       submenu: [
         {
-          label: "Selecionar Unit",
-          click: () => {
-            mainWindow.webContents.send("app:show-root-unit-selection");
-          },
+          label: labelOf("selectUnit"),
+          click: () => run("selectUnit"),
         },
         {
           label: "Selecionar Método",
@@ -45,6 +47,18 @@ export function buildMenu(
             dialog.showMessageBox(mainWindow, {
               message: "Selecionar Método ainda será implementado",
             });
+          },
+        },
+      ],
+    },
+    {
+      label: "Ferramentas",
+      submenu: [
+        {
+          label: "Paleta de Comandos",
+          accelerator: "CmdOrCtrl+P",
+          click: () => {
+            mainWindow.webContents.send("app:show-command-palette");
           },
         },
       ],
