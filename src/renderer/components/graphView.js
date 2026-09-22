@@ -6,7 +6,6 @@ const ORIGIN_IMPLEMENTATION = 'implementation';
 const ORIGIN_BOTH = 'both';
 
 export function renderGraph(nodesData, edgesData, rootUnitId) {
-  document.getElementById('rootUnitSelection').style.display = 'none';
   const container = document.getElementById('mynetwork');
   container.style.display = 'block';
   document.getElementById('viewFilterPanel').style.display = 'block';
