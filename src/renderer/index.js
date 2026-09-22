@@ -9,13 +9,22 @@ import {
 const api = window.pascalDependencyViewer;
 
 let lastProject = null;
+let hasRenderedGraphForCurrentProject = false;
+
+function onRootUnitSelected() {
+  hasRenderedGraphForCurrentProject = true;
+}
 
 configureCommandPalette({ hasProject: () => lastProject !== null });
 
 api.onProjectLoaded((project) => {
   lastProject = project;
   closeCommandPalette();
-  renderRootUnitSelection(project.projectUnits, project.projectDir);
+  hasRenderedGraphForCurrentProject = false;
+  renderRootUnitSelection(project.projectUnits, project.projectDir, {
+    closable: false,
+    onRootUnitSelected,
+  });
 });
 
 api.onShowCommandPalette(() => {
@@ -28,5 +37,8 @@ api.onShowOpenRecent(() => {
 
 api.onShowRootUnitSelection(() => {
   if (!lastProject) return;
-  renderRootUnitSelection(lastProject.projectUnits, lastProject.projectDir);
+  renderRootUnitSelection(lastProject.projectUnits, lastProject.projectDir, {
+    closable: hasRenderedGraphForCurrentProject,
+    onRootUnitSelected,
+  });
 });
