@@ -1,5 +1,9 @@
 # Tasks
 
+> A capability `command-palette` já tem sua spec delta nesta change
+> (`specs/command-palette/spec.md`), documentando o modo `Selecionar Unit`,
+> a mudança em "Execução de um Command" e o estado não-fechável.
+
 ## 1. Camada de domínio (`src/domain/`)
 
 - [x] 1.1 Criar `src/domain/rootUnitSelection/index.js` com a função pura
@@ -10,85 +14,88 @@
   case-insensitive, texto vazio retorna todas as units) e verificar com
   `npx jest src/domain/test/rootUnitSelection.test.js` que todos passam
 
-## 2. Markup e CSS compartilhados do overlay (`index.html`)
+## 2. Remoção do overlay dedicado (versão anterior desta change)
 
-- [x] 2.1 Extrair as regras de `#openRecentOverlay`/`#openRecentDialog`/
-  `#openRecentList`/`.recentDir`/`#openRecentEmpty` em `index.html` para
-  classes reutilizáveis (`.overlay`, `.overlay-dialog`, `.overlay-list`,
-  `.overlay-list li`, `.overlay-list li.selected`, `.overlay-list
-  .secondary`, `.overlay-empty`), aplicadas via `class` nos elementos
-  existentes do Abrir recente, mantendo os IDs atuais e o resultado visual
-  idêntico — verificar rodando `npm start` e conferindo que o Abrir recente
-  continua com a mesma aparência de antes
-- [x] 2.2 Substituir o markup de `#rootUnitSelection` por um overlay
-  `#rootUnitOverlay`/`#rootUnitDialog` usando as classes compartilhadas do
-  item 2.1, com um `input` de busca e `<ul id="rootUnitList">`, e remover do
-  CSS o estilo full-screen antigo de `#rootUnitSelection`
-  (`width/height: 100%`) — verificar que nenhum seletor CSS em `index.html`
-  referencia mais `#rootUnitSelection`
+- [ ] 2.1 Remover de `index.html` o markup de `#rootUnitOverlay`/
+  `#rootUnitDialog`/`#rootUnitInputRow`/`#rootUnitFilter`/`#rootUnitList` e
+  o CSS dedicado a eles, incluindo as classes `.overlay`/`.overlay-dialog`/
+  `.overlay-list`/`.overlay-list li`/`.overlay-list li.selected`/
+  `.overlay-list .secondary`/`.overlay-empty` — verificar com
+  `grep -rn "rootUnitOverlay\|rootUnitDialog\|rootUnitFilter\|rootUnitList\|overlay-list\|overlay-dialog" index.html`
+  que nada resta
+- [ ] 2.2 Remover `src/renderer/components/rootUnitSelection.js` — verificar
+  com `grep -rn "rootUnitSelection" src/` que nenhum outro arquivo o importa
+  mais (fora deste próprio `openspec/changes/`)
 
-## 3. Componente `rootUnitSelection.js`
+## 3. Modo `Selecionar Unit` em `commandPalette.js`
 
-- [x] 3.1 Reescrever `renderRootUnitSelection(projectUnits, projectDir,
-  { closable, onRootUnitSelected })` para abrir o novo overlay (`display:
-  block` em `#rootUnitOverlay`) em vez de esconder `#mynetwork`, usando
-  `filterProjectUnits` (item 1.1) para o filtro — verificar abrindo um
-  `.dpr` de teste com `npm start` e conferindo que a lista de Project Units
-  aparece como overlay sobre a tela
-- [x] 3.2 Renderizar cada item da lista como duas linhas (nome em destaque +
-  `<span class="secondary">` com o caminho do arquivo), reaproveitando a
-  estrutura usada por `renderList` em `openRecentDialog.js:29-49` — verificar
-  visualmente que o caminho aparece como subtexto abaixo do nome
-- [x] 3.3 Adicionar navegação por teclado no campo de busca
-  (`ArrowUp`/`ArrowDown` movendo o destaque com wrap-around, `Enter`
-  confirmando o item destacado como Root Unit) e a classe `selected` +
-  `scrollIntoView({ block: 'nearest' })`, seguindo o mesmo padrão de
-  `moveSelection`/`renderList` de `openRecentDialog.js:57-61` — verificar
-  navegando com as setas em `npm start` e confirmando a seleção com Enter
-- [x] 3.4 Adicionar uma trava `listenersAttached` (mesmo padrão de
-  `attachListeners` em `openRecentDialog.js:63-87`) para que
-  `renderRootUnitSelection` nunca reanexe um segundo listener de
-  `input`/`keydown` ao reabrir a tela — verificar reabrindo a Seleção de
-  Unit várias vezes via `Edição > Selecionar Unit` e confirmando que o
-  filtro e a navegação por teclado continuam respondendo uma única vez por
-  tecla (sem efeito duplicado)
-- [x] 3.5 Implementar o fechamento condicional: `Esc` e o clique fora do
-  card (`mousedown` no overlay quando `event.target === overlay()`, como em
-  `openRecentDialog.js:84-86`) só fecham o overlay quando a opção
-  `closable` recebida for `true`; quando `false`, o evento é ignorado e o
-  overlay permanece aberto — verificar com teste manual: abrir um `.dpr`
-  pela primeira vez e confirmar que `Esc` e o clique fora não têm efeito;
-  depois escolher uma unit, reabrir via `Edição > Selecionar Unit` e
-  confirmar que `Esc` e o clique fora agora fecham o overlay mantendo o
-  grafo atual
-- [x] 3.6 Em `selectRootUnit`, invocar `onRootUnitSelected?.()` logo depois
-  de `renderGraph(...)`, para notificar quem chamou que uma Root Unit foi
-  escolhida com sucesso — verificar com teste manual que escolher uma unit
-  na lista (clique ou Enter) dispara o callback recebido em
-  `renderRootUnitSelection`
+- [ ] 3.1 Adicionar `ROOT_UNIT_MODE` ao lado de `COMMANDS_MODE`/
+  `RECENTS_MODE`, com estado module-level para as `projectUnits`/
+  `projectDir` do modo, e usar `filterProjectUnits` (item 1.1) em
+  `applyFilter` quando `mode === ROOT_UNIT_MODE` — verificar que o módulo
+  importa `filterProjectUnits` de `../../domain/rootUnitSelection/index.js`
+- [ ] 3.2 Renderizar cada item do modo `Selecionar Unit` com o nome da unit
+  em destaque e o caminho como `<span class="recentDir">` subtexto,
+  reaproveitando a mesma estrutura de `renderRecentItem` — verificar
+  visualmente que o caminho aparece como subtexto abaixo do nome, igual ao
+  modo `Abrir recente`
+- [ ] 3.3 Implementar a confirmação de um item do modo `Selecionar Unit`
+  (clique ou `Enter`): chamar `api.expandFromRootUnit({ projectDir,
+  projectUnit, projectUnits })`, depois `renderGraph(...)`, notificar quem
+  chamou que uma seleção ocorreu (para marcar
+  `hasRenderedGraphForCurrentProject`) e fechar a paleta — verificar com
+  teste manual que escolher uma unit (clique ou Enter) exibe o grafo e
+  fecha a paleta
+- [ ] 3.4 Generalizar `recentsEntry` para `modeEntry` (`'palette'` |
+  `'direct'`), usado tanto pelo modo `Abrir recente` quanto pelo modo
+  `Selecionar Unit`, sem mudar o comportamento hoje existente de `Abrir
+  recente` — verificar rodando os testes/cenários já existentes do modo
+  `Abrir recente` (nenhuma regressão)
+- [ ] 3.5 Adicionar estado module-level `closable` (booleano, `true` por
+  padrão); `leaveOnEscape`, o `mousedown` do overlay (clique fora),
+  `showCommandPalette()` (`Cmd/Ctrl+P`) e `showOpenRecent()`
+  (`Cmd/Ctrl+K R`) passam a checar `closable` e não terem efeito algum
+  quando ele for `false` — verificar com teste manual: com a paleta no
+  modo `Selecionar Unit` obrigatório (`closable: false`), `Esc`, clique
+  fora, `Cmd/Ctrl+P` e `Cmd/Ctrl+K R` não têm nenhum efeito
+- [ ] 3.6 Expor uma função (ex.: `enterRootUnitMode(projectUnits,
+  projectDir, { entry, closable, onRootUnitSelected })`) para abrir o modo
+  `Selecionar Unit` programaticamente, e alterar `executeCommand` para que
+  o Command `Selecionar Unit` chame essa função com `entry: 'palette'` e
+  `closable: true` em vez de fechar a paleta e disparar `api.runCommand`
+  — verificar que escolher `Selecionar Unit` na lista de Commands troca de
+  modo sem fechar a paleta, igual ao Command `Abrir recente`
 
-## 4. Estado por Projeto em `src/renderer/index.js`
+## 4. Entradas automática e via menu em `src/renderer/index.js`
 
-- [x] 4.1 Adicionar `let hasRenderedGraphForCurrentProject = false`,
-  resetada para `false` dentro de `onProjectLoaded` antes de chamar
-  `renderRootUnitSelection(project.projectUnits, project.projectDir, {
-  closable: false, onRootUnitSelected })` — verificar lendo o diff e
-  confirmando que todo `app:project-loaded` reseta o estado antes de
-  reabrir a seleção
-- [x] 4.2 Em `onShowRootUnitSelection`, passar `{ closable:
-  hasRenderedGraphForCurrentProject, onRootUnitSelected }` para
-  `renderRootUnitSelection` — verificar com o teste manual do item 3.5
-- [x] 4.3 Implementar `onRootUnitSelected` em `index.js` setando
-  `hasRenderedGraphForCurrentProject = true` — verificar com o teste manual
-  do item 3.5 (a reabertura após selecionar uma unit já permite fechar com
-  `Esc`)
+- [ ] 4.1 Remover o import e o uso de `renderRootUnitSelection`
+  (`./components/rootUnitSelection.js`)
+- [ ] 4.2 Em `onProjectLoaded`, resetar
+  `hasRenderedGraphForCurrentProject = false` e chamar `enterRootUnitMode`
+  (item 3.6) com `entry: 'direct'` e `closable: false` — verificar lendo o
+  diff e confirmando que todo `app:project-loaded` reabre no modo
+  `Selecionar Unit` não-fechável
+- [ ] 4.3 Em `onShowRootUnitSelection` (evento disparado pelo menu `Edição >
+  Selecionar Unit`), chamar `enterRootUnitMode` com `entry: 'direct'` e
+  `closable: hasRenderedGraphForCurrentProject` — verificar com o teste
+  manual do item 5.2
+- [ ] 4.4 Implementar o callback `onRootUnitSelected` passado a
+  `enterRootUnitMode` setando `hasRenderedGraphForCurrentProject = true` —
+  verificar com o teste manual do item 5.2 (a reabertura após selecionar
+  uma unit já permite fechar com `Esc`/clique fora)
 
 ## 5. Regressão e testes
 
-- [x] 5.1 Rodar `npm test` e confirmar que toda a suíte passa, incluindo os
-  novos testes de `src/domain/test/rootUnitSelection.test.js`
+- [ ] 5.1 Rodar `npm test` e confirmar que toda a suíte passa, incluindo os
+  testes de `src/domain/test/rootUnitSelection.test.js` e os testes já
+  existentes do modo `Abrir recente` (sem regressão na generalização do
+  item 3.4)
 - [ ] 5.2 Rodar `npm start` e validar manualmente o fluxo completo: abrir
-  `.dpr` → seleção obrigatória (sem `Esc`/clique-fora) → escolher uma unit
-  → grafo aparece → reabrir via `Edição > Selecionar Unit` → filtrar por
-  nome e por caminho → navegar com teclado (setas + Enter) → fechar com
-  `Esc` e com clique fora → grafo permanece o mesmo em ambos os casos
+  `.dpr` → modo `Selecionar Unit` obrigatório (sem `Esc`/clique-fora/
+  `Cmd+P`/`Cmd+K R`) → escolher uma unit → grafo aparece → abrir a paleta
+  (`Cmd/Ctrl+P`) e executar `Selecionar Unit` → filtrar por nome e por
+  caminho → navegar com teclado (setas + Enter) → `Esc` volta à lista de
+  Commands → reabrir `Selecionar Unit` pela paleta e fechar clicando fora
+  (fecha tudo) → reabrir via `Edição > Selecionar Unit` e fechar com `Esc`
+  e com clique fora (fecha tudo nos dois casos) → grafo permanece o mesmo
+  em todos os fechamentos sem seleção
