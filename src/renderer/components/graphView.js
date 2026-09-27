@@ -41,26 +41,15 @@ export function renderGraph(nodesData, edgesData, rootUnitId) {
   };
   const physics = {
     solver: "forceAtlas2Based",
-    // forceAtlas2Based: {
-    //   gravitationalConstant: -80,
-    //   centralGravity: 0.05,
-    //   springLength: 150,
-    //   springConstant: 0.05,
-    //   damping: 0.4,
-    //   timestep: 0.2,
-    // },
     forceAtlas2Based: {
-      //   theta: 0.5,
-      gravitationalConstant: -50,
-      centralGravity: 0.01,
-      springConstant: 0.08,
-      springLength: 400,
-      damping: 0.4,
-      //   avoidOverlap: 0,
+      gravitationalConstant: -30,
+      centralGravity: 0.002,
+      springLength: 80,
+      springConstant: 0.05,
+      damping: 0.85,
+      avoidOverlap: 0.5,
     },
-    // minVelocity: 3,
-    // maxVelocity: 15,
-    // stabilization: { iterations: 1000 },
+    maxVelocity: 30,
     minVelocity: 0.75,
   };
   const options = {
