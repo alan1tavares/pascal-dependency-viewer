@@ -49,7 +49,7 @@ const createWindow = () => {
   }
 
   if (!app.isPackaged) {
-    mainWindow.webContents.openDevTools();
+    // mainWindow.webContents.openDevTools();
   }
 };
 
