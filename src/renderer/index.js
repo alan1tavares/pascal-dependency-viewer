@@ -1,7 +1,6 @@
-import { renderRootUnitSelection } from './components/rootUnitSelection.js';
 import {
-  closeCommandPalette,
   configureCommandPalette,
+  enterRootUnitMode,
   showCommandPalette,
   showOpenRecent,
 } from './components/commandPalette.js';
@@ -9,13 +8,25 @@ import {
 const api = window.pascalDependencyViewer;
 
 let lastProject = null;
+let hasRenderedGraphForCurrentProject = false;
 
-configureCommandPalette({ hasProject: () => lastProject !== null });
+function onRootUnitSelected() {
+  hasRenderedGraphForCurrentProject = true;
+}
+
+configureCommandPalette({
+  hasProject: () => lastProject !== null,
+  getProject: () => lastProject,
+  onRootUnitSelected,
+});
 
 api.onProjectLoaded((project) => {
   lastProject = project;
-  closeCommandPalette();
-  renderRootUnitSelection(project.projectUnits, project.projectDir);
+  hasRenderedGraphForCurrentProject = false;
+  enterRootUnitMode(project.projectUnits, project.projectDir, {
+    entry: 'direct',
+    closable: false,
+  });
 });
 
 api.onShowCommandPalette(() => {
@@ -28,5 +39,8 @@ api.onShowOpenRecent(() => {
 
 api.onShowRootUnitSelection(() => {
   if (!lastProject) return;
-  renderRootUnitSelection(lastProject.projectUnits, lastProject.projectDir);
+  enterRootUnitMode(lastProject.projectUnits, lastProject.projectDir, {
+    entry: 'direct',
+    closable: hasRenderedGraphForCurrentProject,
+  });
 });
