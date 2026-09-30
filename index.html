@@ -41,8 +41,7 @@
         display: block;
       }
 
-      #commandPaletteOverlay,
-      .overlay {
+      #commandPaletteOverlay {
         display: none;
         position: fixed;
         inset: 0;
@@ -52,8 +51,7 @@
         font-size: 14px;
       }
 
-      #commandPaletteDialog,
-      .overlay-dialog {
+      #commandPaletteDialog {
         width: 560px;
         max-width: calc(100% - 32px);
         margin: 48px auto 0;
@@ -62,38 +60,6 @@
         border-radius: 6px;
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
         overflow: hidden;
-      }
-
-      .overlay-list {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-        max-height: 320px;
-        overflow-y: auto;
-      }
-
-      .overlay-list li {
-        padding: 6px 12px;
-        cursor: pointer;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-      }
-
-      .overlay-list li.selected {
-        background: #d6e9ff;
-      }
-
-      .overlay-list .secondary {
-        display: block;
-        color: #666;
-        font-size: 12px;
-      }
-
-      .overlay-empty {
-        display: none;
-        padding: 12px;
-        color: #666;
       }
 
       #commandPaletteInputRow {
@@ -165,38 +131,9 @@
         padding: 12px;
         color: #666;
       }
-
-      #rootUnitInputRow {
-        display: flex;
-        align-items: center;
-        padding: 8px 12px;
-        border-bottom: 1px solid #ddd;
-      }
-
-      #rootUnitFilter {
-        flex: 1;
-        min-width: 0;
-        border: none;
-        outline: none;
-        font: inherit;
-      }
     </style>
   </head>
   <body>
-    <div id="rootUnitOverlay" class="overlay">
-      <div id="rootUnitDialog" class="overlay-dialog">
-        <div id="rootUnitInputRow">
-          <input
-            type="text"
-            id="rootUnitFilter"
-            autocomplete="off"
-            placeholder="Filtrar por nome ou caminho da unit"
-          />
-        </div>
-        <ul id="rootUnitList" class="overlay-list"></ul>
-      </div>
-    </div>
-
     <div id="mynetwork"></div>
 
     <div id="viewFilterPanel">

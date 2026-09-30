@@ -80,17 +80,25 @@ layout — plain JavaScript, no UI framework, no `shared/` — was chosen).
   `platform`, the `process.platform` string the renderer uses to pick shortcut
   hints);
   `preload/index.js` is just the `contextBridge.exposeInMainWorld` call.
-- `src/renderer/index.js` + `src/renderer/components/{graphView,rootUnitSelection,commandPalette}.js`:
-  `index.js` is the entrypoint (wires the IPC listeners below, tells the
-  palette whether a Project is open, and closes the palette on
-  `app:project-loaded`); `graphView.js` renders the `vis-network` graph,
-  `rootUnitSelection.js` renders the Root Unit search/listing screen,
-  `commandPalette.js` drives the Command Palette overlay (markup/styles live
-  in `index.html`). It has two modes: the Command list (`Digite um comando`,
-  no prefix) and the `Abrir recente` list of Recent Projects (fixed
-  `Abrir recente` prefix). `Esc` in the recents mode goes back to the Command
-  list when the mode was entered through the `Abrir recente` Command, and
-  closes the palette when it was entered by `Cmd/Ctrl+K R` or the menu.
+- `src/renderer/index.js` + `src/renderer/components/{graphView,commandPalette}.js`:
+  `index.js` is the entrypoint (wires the IPC listeners below, configures the
+  palette via `configureCommandPalette({ hasProject, getProject,
+  onRootUnitSelected })`, and tracks `hasRenderedGraphForCurrentProject` per
+  Project); `graphView.js` renders the `vis-network` graph; `commandPalette.js`
+  drives the Command Palette overlay (markup/styles live in `index.html`) —
+  the single search/pick UI for the whole app, with three modes: the Command
+  list (`Digite um comando`, no prefix), `Abrir recente` (Recent Projects,
+  fixed `Abrir recente` prefix) and `Selecionar Unit` (the Root Unit
+  search/listing, no prefix — see capability `root-unit-selection`). `Esc` in
+  a non-Command mode goes back to the Command list when that mode was entered
+  through its own Command in the list (`Abrir recente`/`Selecionar Unit`),
+  and closes the palette entirely when entered by menu/atalho (`Cmd/Ctrl+K R`,
+  or `Edição > Selecionar Unit`); clicking outside the card always closes the
+  palette entirely, regardless of how the mode was entered. The `Selecionar
+  Unit` mode opened automatically right after a Project loads (before any
+  Root Unit has been chosen for it) is additionally marked non-closable:
+  `Esc`, clicking outside, and the `Cmd/Ctrl+P`/`Cmd/Ctrl+K R` shortcuts all
+  have no effect until a Root Unit is chosen.
 - `src/domain/commands/`: the Command catalog (`COMMANDS`: `openProject`,
   `openRecent`, `selectUnit`) plus the pure `availableCommands`
   (`selectUnit` needs a Project), `filterCommands` (case- and
@@ -138,10 +146,14 @@ anything directly — `src/preload/api.js` exposes a narrow API on
    `mainWindow.webContents.send('app:show-root-unit-selection')`, with no
    payload — the main process holds no Project state. The renderer
    (`src/renderer/index.js`) keeps the last `{ projectUnits, projectDir }`
-   received via `onProjectLoaded` in a module-level variable, and re-renders
-   the Root Unit selection screen with it on
-   `onShowRootUnitSelection`; if no Project has been opened yet in the
-   session, the click is a no-op. `Edição > Selecionar Método` just shows a
+   received via `onProjectLoaded` in a module-level variable, and opens the
+   Command Palette's `Selecionar Unit` mode with it
+   (`enterRootUnitMode(projectUnits, projectDir, { entry: 'direct', closable:
+   hasRenderedGraphForCurrentProject })`) on `onShowRootUnitSelection`; if no
+   Project has been opened yet in the session, the click is a no-op.
+   `app:project-loaded` also opens this same mode automatically (`entry:
+   'direct', closable: false`), before the user has picked any Root Unit for
+   that Project. `Edição > Selecionar Método` just shows a
    `dialog.showMessageBox` placeholder alert — no IPC, no renderer state
    change.
 6. `Ferramentas > Paleta de Comandos` (shortcut `CmdOrCtrl+P`) sends
@@ -151,8 +163,11 @@ anything directly — `src/preload/api.js` exposes a narrow API on
    loaded in the session) filtered by `filterCommands`, with the shortcut
    hint on each row. Choosing a Command closes the palette and calls
    `runCommand(id)` over `commands:run` (the same `runCommand` the menu
-   uses), except `Abrir recente`, which switches the palette to its recents
-   mode without any IPC (see step 2). If the native dialog opened by
+   uses), except `Abrir recente` and `Selecionar Unit`, which switch the
+   palette to their own mode without any IPC and without closing it —
+   `Selecionar Unit` reads the current Project straight from the renderer's
+   own state via `getProject()` (see step 5) instead of round-tripping
+   through `app:show-root-unit-selection`. If the native dialog opened by
    `Abrir projeto (.dpr)` is cancelled, nothing is pushed and the palette
    stays closed.
 
@@ -161,8 +176,9 @@ for renderer-initiated calls, `webContents.send` for main-initiated pushes
 from the menu or from the `Cmd/Ctrl+K R` key sequence, and `commands:run` for
 Command Palette executions) — there is no
 `electron-store`/shared-blob step (the only persisted state is the Recent
-Projects JSON in `userData`) and no `reloadMainWindow()`; navigating between the Root Unit selection screen and
-the graph screen is just DOM manipulation inside one page load.
+Projects JSON in `userData`) and no `reloadMainWindow()`; navigating between
+the Command Palette's `Selecionar Unit` mode and the graph screen is just DOM
+manipulation inside one page load.
 
 **Graph shape convention** (`domain/expandDependencyGraph/index.js`): node
 `id` is always lowercased (so edges match regardless of case) while `label`
