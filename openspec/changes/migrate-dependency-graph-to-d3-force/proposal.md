@@ -4,87 +4,103 @@
 
 O grafo de dependências é renderizado hoje com `vis-network`/`vis-data`
 (único consumidor: `src/renderer/components/graphView.js`). O
-comportamento visual e de física dessa biblioteca não está agradando —
-esta mudança migra a camada de visualização para `d3-force`, para
-validar se ela atende melhor ao cenário deste projeto (grafos de
-dependência de units Pascal, com fan-out/fan-in alto e ciclos diretos
-entre units). É uma migração exploratória de biblioteca, não uma
-correção de bug pontual.
+comportamento visual e de física dessa biblioteca não está agradando.
+Esta mudança adiciona `d3-force` como um segundo motor de renderização,
+selecionável em runtime pela Command Palette, para validar se ele
+atende melhor ao cenário deste projeto (grafos de dependência de units
+Pascal, com fan-out/fan-in alto e ciclos diretos entre units) sem
+remover a opção de voltar ao comportamento atual. É uma migração
+exploratória de biblioteca com os dois motores coexistindo
+permanentemente como opção do usuário, não uma substituição definitiva
+nem um rollout temporário.
 
 ## What Changes
 
-- **BREAKING**: substitui `vis-network`/`vis-data` por `d3-force`,
-  `d3-selection`, `d3-drag` e `d3-zoom` (submódulos individuais, não o
-  meta-pacote `d3`) em `package.json`. Nenhum outro arquivo do projeto
-  depende dessas bibliotecas, então a troca é "big bang" — sem período
-  de coexistência entre as duas.
-- Reescreve `graphView.js` para renderizar o grafo em SVG (não Canvas),
-  construindo do zero o que o `vis-network` entregava pronto:
+- Adiciona `d3-force`, `d3-selection`, `d3-drag` e `d3-zoom` (submódulos
+  individuais, não o meta-pacote `d3`) ao `package.json`, ao lado de
+  `vis-network`/`vis-data` — nenhuma das duas bibliotecas é removida.
+- Adiciona um segundo caminho de renderização do Dependency Graph, em
+  SVG, que reconstrói o que o `vis-network` entrega pronto hoje:
   renderização de nodes/edges, setas nas arestas (`<marker>` SVG),
   estilização por grupo (`projectUnit` = elipse `#97C2FC`,
-  `externalUnit` = retângulo `#D3D3D3`), drag de nós (`d3-drag`) e
-  zoom/pan (`d3-zoom`). Paridade visual exata com o que existe hoje —
-  redesenho de aparência (cores/formas novas) fica fora desta mudança.
-- **BREAKING**: muda o comportamento de física do grafo:
+  `externalUnit` = retângulo `#D3D3D3` — paridade visual com o
+  `vis-network`), drag de nós (`d3-drag`) e zoom/pan (`d3-zoom`).
+- No motor `d3-force` (e somente nele — o caminho `vis-network`
+  existente não muda):
   - Alternar qualquer checkbox do View Filter reaquece a simulação de
     física (equivalente a resetar `alpha` e deixar convergir), que
-    estabiliza e desliga sozinha ao final — hoje o `vis-network` só
-    aplica `hidden: true/false` sem tocar a física.
-  - Arrastar um nó passa a seguir o padrão elástico canônico do
-    `d3-force`: a posição fica fixa (`fx`/`fy`) apenas durante o gesto
-    de arraste, sendo liberada (`fx = fy = null`) imediatamente ao
-    soltar o mouse — o nó nunca fica permanentemente fixo, nem durante
-    um reaquecimento por filtro subsequente. Isso reverte o
-    comportamento atual, onde um nó arrastado permanece fixo na
-    posição escolhida indefinidamente.
-- Introduz `jsdom` como `testEnvironment` no Jest e testes automatizados
-  para a lógica não-visual de `graphView.js`: cálculo de visibilidade do
-  View Filter, montagem/mapeamento de nodes e edges a partir dos dados
-  de entrada, e as transições de estado `fx`/`fy` no ciclo de drag e no
-  reaquecimento por filtro. A renderização visual em si (posições
-  finais, aparência) continua validada manualmente, não por teste
-  automatizado.
+    estabiliza e desliga sozinha ao final.
+  - Arrastar um nó segue o padrão elástico canônico do `d3-force`: a
+    posição fica fixa (`fx`/`fy`) apenas durante o gesto de arraste,
+    sendo liberada (`fx = fy = null`) imediatamente ao soltar o mouse —
+    o nó nunca fica permanentemente fixo.
+- Adiciona o Command `Alternar renderização do grafo` ao catálogo da
+  Command Palette (sempre disponível, mesmo sem Project aberto). Ao ser
+  executado, alterna o motor selecionado entre `vis-network` e
+  `d3-force`; se um grafo já está em exibição, ele é re-renderizado
+  imediatamente com o outro motor, reusando os mesmos dados (sem nova
+  leitura de arquivo nem nova expansão). O motor padrão ao iniciar o
+  app é `vis-network`, e a seleção não persiste entre sessões.
+- Validação é manual: não introduz testes automatizados novos para a
+  lógica de renderização do grafo (nenhum dos dois motores).
 
 ## Capabilities
 
 ### New Capabilities
 
-(nenhuma — a migração reformula o comportamento de capabilities já
-existentes, não introduz um recurso novo)
+- `graph-renderer-selection`: qual motor de renderização do Dependency
+  Graph está selecionado, o efeito de alterná-lo pela Command Palette
+  (re-renderiza o grafo atual com o outro motor), o padrão ao iniciar
+  o app, e a não-persistência da escolha entre sessões.
 
 ### Modified Capabilities
 
-- `dependency-graph-layout`: o cenário de arraste muda de "nó
-  permanece fixo na posição escolhida, sem ser realinhado
-  automaticamente" para "nó é liberado de volta à física ao soltar o
-  mouse, podendo ser reposicionado pela simulação" (drag elástico). A
-  garantia de espaçamento mínimo entre nós (sem sobreposição) e a
-  disposição orgânica livre (sem níveis/colunas fixas) continuam
-  valendo, agora implementadas via `d3.forceCollide` combinado com
-  `forceManyBody`/`forceLink`/força de centralização, em vez do solver
-  `forceAtlas2Based` do `vis-network`.
-- `graph-canvas-layout`: a área de renderização do grafo passa a ser um
-  elemento `<svg>` em vez do canvas do `vis-network`. O requisito de
-  preencher 100% da janela e se redimensionar com ela continua o
-  mesmo, só muda a tecnologia por trás.
-- `graph-view-filter`: adiciona o requisito de que alternar o filtro
-  reaquece a simulação de física do grafo (comportamento novo, ausente
-  hoje). Os requisitos de quais nodes/edges ficam visíveis por origem
-  (Uses Clause Origin) e por classificação (External Unit) não mudam,
-  só passam a coexistir com esse reaquecimento.
+- `dependency-graph-layout`: descreve o comportamento do motor
+  `d3-force` como o estado-alvo destes requisitos — o cenário de
+  arraste muda de "nó permanece fixo na posição escolhida" para "nó é
+  liberado de volta à física ao soltar o mouse". A garantia de
+  espaçamento mínimo entre nós e a disposição orgânica livre continuam
+  valendo, agora via `d3.forceCollide` combinado com
+  `forceManyBody`/`forceLink`/força de centralização. (O comportamento
+  do motor `vis-network`, quando selecionado, não é coberto por
+  nenhuma spec ativa — ver `design.md`.)
+- `graph-canvas-layout`: quando o motor `d3-force` está selecionado, a
+  área de renderização do grafo é um elemento `<svg>` em vez do canvas
+  do `vis-network`. O requisito de preencher 100% da janela e se
+  redimensionar com ela continua o mesmo.
+- `graph-view-filter`: adiciona o requisito de que, no motor
+  `d3-force`, alternar o filtro reaquece a simulação de física do
+  grafo (comportamento novo, ausente no `vis-network`). Os requisitos
+  de quais nodes/edges ficam visíveis por origem e por classificação
+  não mudam.
+- `command-palette`: o catálogo de Commands ganha um 4º item,
+  `Alternar renderização do grafo`, sempre disponível (mesmo sem
+  Project aberto), com seu próprio comportamento de execução.
 
 ## Impact
 
-- `src/renderer/components/graphView.js`: reescrita completa.
-- `package.json`: remove `vis-network` e `vis-data`; adiciona
-  `d3-force`, `d3-selection`, `d3-drag`, `d3-zoom`.
-- `jest.config.js`: `testEnvironment` passa a `jsdom` (ou configuração
-  equivalente por projeto/glob, se necessário para não afetar os
-  testes existentes de `src/domain/`, que não precisam de DOM).
+- `src/renderer/components/graphView.js`: passa a ser um dos dois
+  caminhos de renderização (o do `vis-network`, inalterado em
+  comportamento) por trás de um dispatcher que escolhe o motor
+  selecionado; o novo caminho `d3-force` é um módulo novo (ver
+  `design.md` para o layout exato).
+- `package.json`: adiciona `d3-force`, `d3-selection`, `d3-drag`,
+  `d3-zoom`; `vis-network` e `vis-data` permanecem.
+- `src/domain/commands/`: novo Command `Alternar renderização do
+  grafo` no catálogo `COMMANDS`.
+- `src/main/commands.js`, `src/main/menu.js` (se aplicável): roteamento
+  do novo Command, sem lógica de diálogo/arquivo — apenas dispara o
+  toggle no renderer.
+- `src/renderer/index.js`: passa a reter o último grafo renderizado
+  (nodes/edges/Root Unit) para permitir o re-render imediato ao
+  alternar o motor.
 - `openspec/specs/dependency-graph-layout/spec.md`,
   `openspec/specs/graph-canvas-layout/spec.md`,
-  `openspec/specs/graph-view-filter/spec.md`: specs atualizadas por
-  esta mudança (deltas em `specs/` desta pasta de change).
-- Fora de escopo: qualquer mudança de UX fora de `graphView.js`
-  (Command Palette, seleção de Root Unit, IPC, parsing de `.pas`/`.dpr`)
-  permanece intocada.
+  `openspec/specs/graph-view-filter/spec.md`,
+  `openspec/specs/command-palette/spec.md`: specs atualizadas por esta
+  mudança (deltas em `specs/` desta pasta de change).
+- `openspec/specs/graph-renderer-selection/spec.md`: nova spec.
+- Fora de escopo: qualquer mudança de UX fora do descrito acima
+  (seleção de Root Unit, IPC de projeto/`.dpr`, parsing de `.pas`)
+  permanece intocada. Testes automatizados para a lógica de
+  renderização do grafo não fazem parte desta mudança.
