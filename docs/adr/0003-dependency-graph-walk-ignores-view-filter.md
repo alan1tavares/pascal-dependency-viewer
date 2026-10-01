@@ -1,18 +1,20 @@
-# Dependency Graph walk always follows both Uses Clause Origins
+# A travessia do Dependency Graph sempre segue ambas as Uses Clause Origins
 
-The graph screen's View Filter (interface / implementation / both, see
-`CONTEXT.md`) can be toggled at any time and must re-render the graph
-instantly, without a new `expandFromRootUnit` round-trip. To make that
-possible, `expandDependencyGraph` always walks the union of `interface` and
-`implementation` `uses` for every visited Unit — never just the subset the
-View Filter currently shows — and tags each edge with its Uses Clause
-Origin(s). The View Filter only hides/shows already-computed nodes and
-edges client-side; it never changes what gets read from disk.
+O View Filter da tela do grafo (interface / implementation / ambos, veja
+`CONTEXT.md`) pode ser alternado a qualquer momento e precisa renderizar o
+grafo novamente de forma instantânea, sem uma nova ida e volta de
+`expandFromRootUnit`. Para tornar isso possível, `expandDependencyGraph`
+sempre percorre a união das `uses` de `interface` e de `implementation` de
+cada Unit visitada — nunca apenas o subconjunto que o View Filter está
+exibindo no momento — e marca cada aresta com sua(s) Uses Clause Origin(s).
+O View Filter apenas oculta/exibe nós e arestas já calculados no lado do
+cliente; ele nunca muda o que é lido do disco.
 
-This replaces the previous behavior, where choosing "Interface" in the old
-Uses Clause Scope radio limited which files were even read during the walk.
-The trade-off is deliberate: every graph expansion now reads potentially
-more `.pas` files than a interface-only walk would, in exchange for the
-View Filter never needing to hit the filesystem again after the initial
-load. Typical Delphi project sizes make the extra I/O negligible next to
-the UX cost of a filter that has to wait on disk.
+Isso substitui o comportamento anterior, em que escolher "Interface" no
+antigo rádio de Uses Clause Scope limitava quais arquivos chegavam a ser
+lidos durante a travessia. O trade-off é deliberado: cada expansão do grafo
+agora lê potencialmente mais arquivos `.pas` do que uma travessia apenas de
+interface leria, em troca de o View Filter nunca mais precisar acessar o
+sistema de arquivos após o carregamento inicial. Os tamanhos típicos de
+projetos Delphi tornam o I/O extra desprezível diante do custo de UX de um
+filtro que precisa esperar pelo disco.

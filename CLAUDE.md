@@ -205,3 +205,15 @@ options to style them differently.
   otherwise the two builds would silently overwrite each other.
 - `mainWindow.webContents.openDevTools()` is conditioned on `!app.isPackaged`
   (was unconditional before the migration).
+
+## Documentation language
+
+- ADRs (`docs/adr/*.md`) and `CONTEXT.md` must be written in Brazilian
+  Portuguese (pt-BR) — both when creating new entries and when editing
+  existing ones.
+- Keep the glossary terms defined in `CONTEXT.md` (`Unit`, `Project`,
+  `Root Unit`, `Uses Clause Origin`, `View Filter`, etc.) in English, since
+  they match the identifiers used in the code; the same goes for code
+  identifiers, file paths, commands and other technical names.
+- ADR file names stay in English kebab-case
+  (`NNNN-short-title-in-english.md`), as other docs reference them by path.

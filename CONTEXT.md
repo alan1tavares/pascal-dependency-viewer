@@ -1,88 +1,96 @@
 # Pascal Dependency Viewer
 
-Visualizes how Pascal/Delphi units depend on each other, starting from a
-Root Unit picked out of a whole Delphi project.
+Visualiza como as units Pascal/Delphi dependem umas das outras, a partir de
+uma Root Unit escolhida dentro de um projeto Delphi inteiro.
 
-## Language
+## Linguagem
 
 **Unit**:
-A single Pascal source file (`.pas`), declared by its `unit Name;` header. The
-basic node of every dependency graph the app draws.
+Um único arquivo-fonte Pascal (`.pas`), declarado pelo seu cabeçalho
+`unit Name;`. O nó básico de todo grafo de dependências que o app desenha.
 
 **Project**:
-A Delphi `.dpr` file. Its `uses` clause enumerates the project's own units,
-each paired with its file path (`UnitA in 'UnitA.pas'`), giving a direct
-Unit → file mapping.
-_Avoid_: `.dproj`, `.groupproj` — not supported as the "project" artifact.
+Um arquivo `.dpr` do Delphi. Sua cláusula `uses` enumera as units próprias do
+projeto, cada uma junto com o caminho do seu arquivo (`UnitA in 'UnitA.pas'`),
+fornecendo um mapeamento direto Unit → arquivo.
+_Evitar_: `.dproj`, `.groupproj` — não são suportados como o artefato de
+"projeto".
 
 **Recent Project**:
-A Project the user has successfully opened before, identified by the path of
-its `.dpr` file. Recent Projects are listed most-recently-opened first, with
-no duplicates — reopening one moves it to the top — and only the latest 10
-are kept. Persisted across sessions, unlike the currently open Project.
+Um Project que o usuário já abriu com sucesso anteriormente, identificado pelo
+caminho do seu arquivo `.dpr`. Os Recent Projects são listados do aberto mais
+recentemente para o mais antigo, sem duplicatas — reabrir um deles o move para
+o topo — e apenas os 10 mais recentes são mantidos. São persistidos entre
+sessões, ao contrário do Project aberto no momento.
 
 **Command**:
-A named action of the app that the user can trigger by name. Has a label
-and, optionally, a keyboard shortcut. Initial Commands: `Abrir projeto
-(.dpr)`, `Abrir recente` and `Selecionar Unit`. A Command that cannot do
-anything in the current state (e.g. `Selecionar Unit` before any Project has
-been opened) is not offered.
-_Avoid_: "menu item" or "action" — imprecise; the native menu is just one of
-the places a Command can be triggered from.
+Uma ação nomeada do app que o usuário pode disparar pelo nome. Tem um rótulo
+e, opcionalmente, um atalho de teclado. Commands iniciais: `Abrir projeto
+(.dpr)`, `Abrir recente` e `Selecionar Unit`. Um Command que não pode fazer
+nada no estado atual (ex.: `Selecionar Unit` antes de qualquer Project ter
+sido aberto) não é oferecido.
+_Evitar_: "item de menu" ou "ação" — impreciso; o menu nativo é apenas um dos
+lugares de onde um Command pode ser disparado.
 
 **Command Palette**:
-The search overlay, shown at the top of the screen, where the user filters
-and triggers a Command. It has two modes: the list of Commands, and the list
-of Recent Projects (the `Abrir recente` mode, entered by choosing that
-Command or directly by its own shortcut).
-_Avoid_: "recent projects dialog" — that list is now a mode of the Command
-Palette, not a window of its own.
+O overlay de busca, exibido no topo da tela, onde o usuário filtra e dispara
+um Command. Tem dois modos: a lista de Commands e a lista de Recent Projects
+(o modo `Abrir recente`, acessado ao escolher esse Command ou diretamente pelo
+seu próprio atalho).
+_Evitar_: "diálogo de projetos recentes" — essa lista agora é um modo da
+Command Palette, e não uma janela própria.
 
 **Project Unit**:
-A `uses` entry inside a Project's `.dpr` that has an explicit `in 'path'`.
-These are the project's own units — the only ones searchable/selectable as a
-Root Unit, since they're the only ones with a file to open.
-_Avoid_: conflating with entries lacking `in 'path'` (RTL/VCL units, not part
-of the project).
+Uma entrada de `uses` dentro do `.dpr` de um Project que possui um
+`in 'caminho'` explícito. Essas são as units próprias do projeto — as únicas
+que podem ser buscadas/selecionadas como Root Unit, já que são as únicas com
+um arquivo a ser aberto.
+_Evitar_: confundir com entradas sem `in 'caminho'` (units da RTL/VCL, que
+não fazem parte do projeto).
 
 **Root Unit**:
-The Project Unit the user picks from the search/listing screen to start a
-Dependency Graph from.
+A Project Unit que o usuário escolhe na tela de busca/listagem para iniciar um
+Dependency Graph.
 
 **External Unit**:
-A unit referenced by some `uses` clause during graph expansion that is not a
-Project Unit (no matching `.dpr` entry with `in 'path'`) — e.g. RTL/VCL or a
-third-party library. Rendered as a leaf node, styled distinctly from Project
-Units to signal the graph couldn't expand further there.
+Uma unit referenciada por alguma cláusula `uses` durante a expansão do grafo
+que não é uma Project Unit (não há entrada correspondente no `.dpr` com
+`in 'caminho'`) — ex.: RTL/VCL ou uma biblioteca de terceiros. É renderizada
+como um nó folha, com estilo distinto das Project Units, para sinalizar que o
+grafo não pôde ser expandido além dali.
 
 **Dependency Graph**:
-The transitive expansion of a Root Unit's `uses` references into further
-Project Units, recursively, always following both `interface` and
-`implementation` `uses` (see Uses Clause Origin) regardless of how the
-result is later displayed. Each unit is expanded at most once — a unit
-reached again from elsewhere in the walk gets an edge back to its existing
-node rather than a duplicated subtree, so the result is a DAG, not a literal
-tree (diamond dependencies merge; cycles close instead of recursing forever).
-_Avoid_: "Dependency Tree" — imprecise, since nodes can have multiple parents.
+A expansão transitiva das referências `uses` de uma Root Unit em outras
+Project Units, recursivamente, sempre seguindo as `uses` tanto de `interface`
+quanto de `implementation` (veja Uses Clause Origin), independentemente de
+como o resultado é exibido depois. Cada unit é expandida no máximo uma vez —
+uma unit alcançada novamente a partir de outro ponto da travessia recebe uma
+aresta apontando para o seu nó já existente, em vez de uma subárvore
+duplicada, de modo que o resultado é um DAG, e não uma árvore literal
+(dependências em diamante se fundem; ciclos se fecham em vez de recorrer
+infinitamente).
+_Evitar_: "Dependency Tree" (árvore de dependências) — impreciso, já que os
+nós podem ter vários pais.
 
 **Uses Clause Origin**:
-Which section of a Unit's source — `interface` or `implementation` — declared
-a given `uses` reference. Recorded on each edge of the Dependency Graph as
-the walk parses every Unit; an edge declared in both sections carries both
-origins. This is a property of the graph data, independent of what the
-graph screen currently displays.
+Qual seção do fonte de uma Unit — `interface` ou `implementation` — declarou
+uma determinada referência `uses`. É registrada em cada aresta do Dependency
+Graph à medida que a travessia faz o parsing de cada Unit; uma aresta
+declarada em ambas as seções carrega ambas as origens. É uma propriedade dos
+dados do grafo, independente do que a tela do grafo exibe no momento.
 
 **View Filter**:
-Which parts of the already-computed Dependency Graph are currently shown on
-the graph screen. Chosen on the graph screen itself and not persisted —
-changing it re-renders the existing graph without re-walking the filesystem.
-Two independent axes, each toggled on its own:
-- **Uses Clause Origin** (`interface`, `implementation`, or both): at least
-  one is always selected; defaults to both.
-- **External Unit visibility**: shows or hides every External Unit node,
-  along with any edge pointing to one. No minimum-selected constraint (it
-  can be turned off on its own); defaults to hidden.
-_Avoid_: "Uses Clause Scope" — the old single setting that conflated
-generation-time walking with display-time filtering; replaced by Uses
-Clause Origin now that origin visibility varies independently from graph
-generation, and independently again from External Unit visibility.
+Quais partes do Dependency Graph já calculado são exibidas no momento na tela
+do grafo. É escolhido na própria tela do grafo e não é persistido — alterá-lo
+renderiza novamente o grafo existente sem percorrer o sistema de arquivos de
+novo. São dois eixos independentes, cada um alternado separadamente:
+- **Uses Clause Origin** (`interface`, `implementation` ou ambos): ao menos
+  uma está sempre selecionada; o padrão é ambas.
+- **Visibilidade das External Units**: exibe ou oculta todos os nós de
+  External Unit, junto com qualquer aresta que aponte para um deles. Não há
+  restrição de seleção mínima (pode ser desligado sozinho); o padrão é oculto.
+_Evitar_: "Uses Clause Scope" — a antiga configuração única que misturava a
+travessia no momento da geração com a filtragem no momento da exibição; foi
+substituída pela Uses Clause Origin, agora que a visibilidade por origem varia
+independentemente da geração do grafo e, também de forma independente, da
+visibilidade das External Units.

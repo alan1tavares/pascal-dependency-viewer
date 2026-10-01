@@ -1,13 +1,14 @@
-# Use the `.dpr` file, not `.dproj`, as the Project source
+# Usar o arquivo `.dpr`, e não o `.dproj`, como fonte do Project
 
-To add a "load a Delphi project" feature, we needed a single artifact to
-derive the list of the project's own units from. We chose the `.dpr` file:
-its `uses` clause already lists each unit paired with its file path
-(`UnitA in 'UnitA.pas'`), giving a direct unit → file mapping via the same
-lightweight regex parsing this codebase already uses for single `.pas`
-files. We considered `.dproj` (the XML project file IDEs surface as "the
-project"), but it would require XML parsing and doesn't map as directly to
-source files; we also considered scanning the project folder for `.pas`
-files, but that can't distinguish project units from unrelated files sitting
-in the same folder. `.groupproj` (multi-project groups) is out of scope
-entirely — only a single `.dpr` is supported as a Project.
+Para adicionar uma funcionalidade de "carregar um projeto Delphi", precisávamos
+de um único artefato do qual derivar a lista das units próprias do projeto.
+Escolhemos o arquivo `.dpr`: sua cláusula `uses` já lista cada unit junto com
+o caminho do seu arquivo (`UnitA in 'UnitA.pas'`), fornecendo um mapeamento
+direto unit → arquivo por meio do mesmo parsing leve via regex que este
+código já usa para arquivos `.pas` avulsos. Consideramos o `.dproj` (o arquivo
+XML de projeto que as IDEs apresentam como "o projeto"), mas ele exigiria
+parsing de XML e não mapeia tão diretamente para os arquivos-fonte; também
+consideramos varrer a pasta do projeto em busca de arquivos `.pas`, mas isso
+não consegue distinguir as units do projeto de arquivos não relacionados que
+estejam na mesma pasta. O `.groupproj` (grupos de múltiplos projetos) está
+totalmente fora do escopo — apenas um único `.dpr` é suportado como Project.
