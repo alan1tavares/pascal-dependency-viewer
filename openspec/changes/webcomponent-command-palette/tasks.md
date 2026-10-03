@@ -2,14 +2,17 @@
 
 ## 1. Criar Web Component CommandPalette.js
 
-- [x] 1.1 Criar classe `CommandPalette extends HTMLElement` em `src/renderer/components/CommandPalette.js` com Shadow DOM, template string e estilos encapsulados — verificar que arquivo existe e classe exportada como `customElements.define('command-palette', CommandPalette)`
+- [x] 1.1 Criar arquivo `src/renderer/components/CommandPalette.css` com estilos separados — verificar que arquivo contém todo CSS do componente, syntax highlighting funciona
+- [x] 1.1b Criar classe `CommandPalette extends HTMLElement` em `src/renderer/components/CommandPalette.js` com Shadow DOM, template inline e CSS importado — verificar que arquivo existe e classe exportada como `customElements.define('command-palette', CommandPalette)`
 - [x] 1.2 Implementar state privado (mode, selectedIndex, filteredItems, modeEntry, closable, isOpen, recentPaths, rootUnits, rootUnitProjectDir) como `#field` — verificar via console que state é privado (não enumerable como public property)
 - [x] 1.3 Implementar métodos públicos `open()`, `close()`, `switchMode(mode)` e verificar via console que chamadas funcionam corretamente
 - [x] 1.4 Implementar setter methods `setCommands(list)`, `setRecentProjects(list)`, `setProjectUnits(units, projectDir)`, `setHasProject(fn)`, `setGetProject(fn)`, `setOnRootUnitSelected(fn)` — verificar que métodos existem no elemento e aceitam argumentos
-- [x] 1.5 Implementar renderização interna (`#renderList()`, `#applyFilter()`, `#resetInput()`, etc.) com template único — verificar que shadow DOM contém o overlay e lista quando aberto
+- [x] 1.5 Implementar renderização interna consolidada (`#renderItem()` genérico, `#renderList()`, `#applyFilter()`, `#resetInput()`, etc.) — consolidar 3 métodos em 1; verificar que shadow DOM contém overlay/lista quando aberto
 - [x] 1.6 Implementar navegação (↑, ↓, Enter, Esc) via event listeners em `connectedCallback()` — verificar via keyboard no app que setas movem destaque, Enter seleciona, Esc fecha
 - [x] 1.7 Implementar lógica de click fora do card e modo não-fechável — verificar que click no overlay fecha paleta, e que no modo não-fechável não fecha
 - [x] 1.8 Implementar emissão de eventos `selection-confirmed` (detail: {item, mode}) e `closed` — verificar que eventos são disparados ao abrir DevTools com listener
+- [ ] 1.9 Separar CSS para arquivo `CommandPalette.css` e importar com `?inline` no JS — verificar que Vite bundla sem requisição HTTP extra, CSS aplicado no shadow DOM
+- [ ] 1.10 Consolidar `#renderCommandItem()`, `#renderRecentItem()`, `#renderRootUnitItem()` em 1 método `#renderItem(entry, fields)` — reduz ~40 linhas, mantém funcionalidade idêntica
 
 ## 2. Refatorar renderer/index.js
 

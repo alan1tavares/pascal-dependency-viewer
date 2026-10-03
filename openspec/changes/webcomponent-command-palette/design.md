@@ -43,17 +43,20 @@ A refatoração transforma isso em um Web Component encapsulado que:
 - Light DOM: mais simples, mas estilos vazam bidirecional
 - Web Shadow DOM sem herança: isola bem mas quebra tema global
 
-### 2. Template Único (Não Separado)
+### 2. CSS Separado + Template Inline
 
-**Decision**: HTML + CSS inline como template string dentro de `CommandPalette.js`.
+**Decision**: CSS fica em arquivo `CommandPalette.css` separado; HTML template permanece inline.
 
 **Rationale**:
-- Componente é relativamente pequeno, arquivo único é legível
-- Evita complexidade de bundling e imports de assets
-- Facilita redistribuição como arquivo standalone
+- CSS legível em arquivo dedicado com syntax highlighting nativo
+- Editor CSS reconhece estilos, autocomplete funciona
+- Vite bundla com `?inline` — sem requisição HTTP, ainda embutido no JS final
+- HTML simples inline (25 linhas) fica legível
+- Separação clara de responsabilidades
 
 **Alternatives considered**:
-- Arquivos separados (html, css): mais organizado, mas adiciona overhead de imports/bundling
+- HTML + CSS inline: menor overhead mas difícil editar CSS em arquivo JS
+- Ambos separados: mais organizado mas overhead maior de imports
 
 ### 3. Interface Pública via Métodos (Não Callbacks Globais)
 
@@ -89,6 +92,20 @@ A refatoração transforma isso em um Web Component encapsulado que:
 **Alternatives considered**:
 - Expor o elemento como export: exigiria refator mais amplo em quem o importa
 
+### 6. Consolidação da Renderização
+
+**Decision**: Os 3 métodos `#renderCommandItem()`, `#renderRecentItem()`, `#renderRootUnitItem()` são consolidados em 1 método genérico `#renderItem(entry, fields)`.
+
+**Rationale**:
+- Reduz ~40 linhas (9% do arquivo) sem perder clareza
+- Lógica repetida é eliminada (criaElement, listeners, append)
+- Metadata-driven: qual campo renderizar é configurável
+- Continua legível com nomes de fields descritivos
+
+**Alternatives considered**:
+- Manter 3 métodos: mais explícito mas repetitivo
+- Template strings: mais compacto mas menos flexível
+
 ## Risks / Trade-offs
 
 | Risk | Mitigation |
@@ -100,11 +117,14 @@ A refatoração transforma isso em um Web Component encapsulado que:
 
 ## Migration Plan
 
-1. **Criar CommandPalette.js** como classe Web Component com lógica migrada de commandPalette.js
-2. **Refatorar renderer/index.js**: remover imports de commandPalette.js, usar `querySelector('command-palette')` para acessar métodos
-3. **Simplificar index.html**: remover `<div id="commandPaletteOverlay">` + `<style>`; adicionar `<command-palette></command-palette>`
-4. **Testar manualmente**: verificar cada modo (commands, recents, rootUnit), navegação (↑/↓/Enter/Esc), clique fora, modeEntry logic
-5. **Cleanup**: remover commandPalette.js após validação
+1. **Criar CommandPalette.css** com estilos separados
+2. **Criar CommandPalette.js** como classe Web Component (lógica + template inline)
+   - Importar CSS com `?inline` do Vite
+   - Consolidar renderização em 1 método genérico
+3. **Refatorar renderer/index.js**: remover imports de commandPalette.js, usar `querySelector('command-palette')` para acessar métodos
+4. **Simplificar index.html**: remover `<div id="commandPaletteOverlay">` + `<style>`; adicionar `<command-palette></command-palette>`
+5. **Testar manualmente**: verificar cada modo (commands, recents, rootUnit), navegação (↑/↓/Enter/Esc), clique fora, modeEntry logic
+6. **Cleanup**: remover commandPalette.js após validação
 
 **Rollback**: Se necessário, reverter os 4 commits acima reverte para o comportamento anterior.
 
