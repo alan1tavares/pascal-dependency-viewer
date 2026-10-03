@@ -1,46 +1,69 @@
-import {
-  configureCommandPalette,
-  enterRootUnitMode,
-  showCommandPalette,
-  showOpenRecent,
-} from './components/commandPalette.js';
+import './components/CommandPalette.js';
+import { renderGraph } from './components/graphView.js';
 
 const api = window.pascalDependencyViewer;
 
 let lastProject = null;
 let hasRenderedGraphForCurrentProject = false;
 
+const palette = document.querySelector('command-palette');
+
 function onRootUnitSelected() {
   hasRenderedGraphForCurrentProject = true;
 }
 
-configureCommandPalette({
-  hasProject: () => lastProject !== null,
-  getProject: () => lastProject,
-  onRootUnitSelected,
+palette.setHasProject(() => lastProject !== null);
+palette.setGetProject(() => lastProject);
+palette.setOnRootUnitSelected(onRootUnitSelected);
+
+palette.addEventListener('selection-confirmed', async (event) => {
+  const { item, mode } = event.detail;
+
+  if (mode === 'commands') {
+    palette.close();
+    api.runCommand(item.id);
+  } else if (mode === 'recents') {
+    palette.close();
+    api.openRecentProject(item);
+  } else if (mode === 'rootUnit') {
+    const graph = await api.expandFromRootUnit({
+      projectDir: lastProject.projectDir,
+      projectUnit: item,
+      projectUnits: lastProject.projectUnits,
+    });
+    renderGraph(graph.nodes, graph.edges, graph.rootUnitId);
+    onRootUnitSelected();
+    palette.close();
+    palette.closable = true;
+  }
+});
+
+palette.addEventListener('closed', () => {
+  // Paleta foi fechada
 });
 
 api.onProjectLoaded((project) => {
   lastProject = project;
   hasRenderedGraphForCurrentProject = false;
-  enterRootUnitMode(project.projectUnits, project.projectDir, {
-    entry: 'direct',
-    closable: false,
-  });
+  palette.closable = false;
+  palette.setProjectUnits(project.projectUnits, project.projectDir);
+  palette.switchMode('rootUnit');
+  palette.open();
 });
 
 api.onShowCommandPalette(() => {
-  showCommandPalette();
+  palette.open();
 });
 
 api.onShowOpenRecent(() => {
-  showOpenRecent();
+  palette.switchMode('recents');
+  palette.open();
 });
 
 api.onShowRootUnitSelection(() => {
   if (!lastProject) return;
-  enterRootUnitMode(lastProject.projectUnits, lastProject.projectDir, {
-    entry: 'direct',
-    closable: hasRenderedGraphForCurrentProject,
-  });
+  palette.closable = hasRenderedGraphForCurrentProject;
+  palette.setProjectUnits(lastProject.projectUnits, lastProject.projectDir);
+  palette.switchMode('rootUnit');
+  palette.open();
 });
