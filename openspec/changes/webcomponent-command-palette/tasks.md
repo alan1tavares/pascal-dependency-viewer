@@ -44,6 +44,6 @@
 ## 5. Cleanup e Finalização
 
 - [x] 5.1 Remover arquivo antigo `src/renderer/components/commandPalette.js` — verificar que arquivo não existe mais
-- [ ] 5.2 Rodar `npm test` (suite jest) e verificar que testes do domain passam, nenhum teste quebrado — verificar exit code 0
+- [x] 5.2 Rodar `npm test` (suite jest) e verificar que testes do domain passam, nenhum teste quebrado — verificar exit code 0
 - [x] 5.3 Verificar que não há import de `commandPalette.js` em nenhum lugar do código (grep) — verificar que grep retorna 0 resultados
 - [x] 5.4 Commit final: "refactor: transforme commandPalette em web component nativo" — verificar que diff mostra arquivo removido, CommandPalette.js adicionado, renderer/index.js e index.html modificados
