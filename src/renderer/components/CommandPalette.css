@@ -1,0 +1,111 @@
+:host {
+  --cp-bg: white;
+  --cp-text: #000;
+  --cp-border: #ccc;
+  --cp-hint: #666;
+  --cp-selected: #d6e9ff;
+  --cp-overlay: rgba(0, 0, 0, 0.3);
+  --cp-prefix-bg: #e8e8e8;
+}
+
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--cp-overlay);
+  font-family: sans-serif;
+  font-size: 14px;
+}
+
+.overlay.open {
+  display: block;
+}
+
+.card {
+  width: 560px;
+  max-width: calc(100% - 32px);
+  margin: 48px auto 0;
+  background: var(--cp-bg);
+  border: 1px solid var(--cp-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.input-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #ddd;
+}
+
+.prefix {
+  flex: none;
+  margin-right: 8px;
+  padding: 2px 8px;
+  background: var(--cp-prefix-bg);
+  border-radius: 3px;
+  color: #333;
+  user-select: none;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  font: inherit;
+  color: var(--cp-text);
+  background: var(--cp-bg);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.list li {
+  padding: 6px 12px;
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--cp-text);
+}
+
+.list li.selected {
+  background: var(--cp-selected);
+}
+
+.list .recent-dir {
+  display: block;
+  color: var(--cp-hint);
+  font-size: 12px;
+}
+
+.list li.command-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.list .command-hint {
+  flex: none;
+  color: var(--cp-hint);
+  font-size: 12px;
+}
+
+.empty-message {
+  display: none;
+  padding: 12px;
+  color: var(--cp-hint);
+}
+
+.empty-message.show {
+  display: block;
+}

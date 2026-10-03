@@ -9,6 +9,7 @@ import {
   filterRecentProjects,
 } from '../../domain/recentProjects/index.js';
 import { filterProjectUnits } from '../../domain/rootUnitSelection/index.js';
+import styles from './CommandPalette.css?inline';
 
 const api = window.pascalDependencyViewer;
 const isMac = api.platform === 'darwin';
@@ -33,120 +34,6 @@ const TEMPLATE = `
       <div class="empty-message"></div>
     </div>
   </div>
-`;
-
-const STYLES = `
-  :host {
-    --cp-bg: white;
-    --cp-text: #000;
-    --cp-border: #ccc;
-    --cp-hint: #666;
-    --cp-selected: #d6e9ff;
-    --cp-overlay: rgba(0, 0, 0, 0.3);
-    --cp-prefix-bg: #e8e8e8;
-  }
-
-  .overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    background: var(--cp-overlay);
-    font-family: sans-serif;
-    font-size: 14px;
-  }
-
-  .overlay.open {
-    display: block;
-  }
-
-  .card {
-    width: 560px;
-    max-width: calc(100% - 32px);
-    margin: 48px auto 0;
-    background: var(--cp-bg);
-    border: 1px solid var(--cp-border);
-    border-radius: 6px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-    overflow: hidden;
-  }
-
-  .input-row {
-    display: flex;
-    align-items: center;
-    padding: 8px 12px;
-    border-bottom: 1px solid #ddd;
-  }
-
-  .prefix {
-    flex: none;
-    margin-right: 8px;
-    padding: 2px 8px;
-    background: var(--cp-prefix-bg);
-    border-radius: 3px;
-    color: #333;
-    user-select: none;
-  }
-
-  .input {
-    flex: 1;
-    min-width: 0;
-    border: none;
-    outline: none;
-    font: inherit;
-    color: var(--cp-text);
-    background: var(--cp-bg);
-  }
-
-  .list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    max-height: 320px;
-    overflow-y: auto;
-  }
-
-  .list li {
-    padding: 6px 12px;
-    cursor: pointer;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    color: var(--cp-text);
-  }
-
-  .list li.selected {
-    background: var(--cp-selected);
-  }
-
-  .list .recent-dir {
-    display: block;
-    color: var(--cp-hint);
-    font-size: 12px;
-  }
-
-  .list li.command-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 16px;
-  }
-
-  .list .command-hint {
-    flex: none;
-    color: var(--cp-hint);
-    font-size: 12px;
-  }
-
-  .empty-message {
-    display: none;
-    padding: 12px;
-    color: var(--cp-hint);
-  }
-
-  .empty-message.show {
-    display: block;
-  }
 `;
 
 export class CommandPalette extends HTMLElement {
@@ -180,7 +67,7 @@ export class CommandPalette extends HTMLElement {
 
   connectedCallback() {
     const style = document.createElement('style');
-    style.textContent = STYLES;
+    style.textContent = styles;
     this.#shadowRoot.appendChild(style);
 
     const template = document.createElement('template');
@@ -268,66 +155,40 @@ export class CommandPalette extends HTMLElement {
   }
 
   // Private methods
-  #renderCommandItem(command) {
+  #renderItem(entry, mode) {
     const item = document.createElement('li');
-    item.classList.add('command-item');
-    item.appendChild(document.createTextNode(command.label));
 
-    const hint = shortcutHint(command, isMac);
-    if (hint) {
-      const hintLabel = document.createElement('span');
-      hintLabel.className = 'command-hint';
-      hintLabel.textContent = hint;
-      item.appendChild(hintLabel);
+    if (mode === COMMANDS_MODE) {
+      item.classList.add('command-item');
+      item.appendChild(document.createTextNode(entry.label));
+      const hint = shortcutHint(entry, isMac);
+      if (hint) {
+        const hintLabel = document.createElement('span');
+        hintLabel.className = 'command-hint';
+        hintLabel.textContent = hint;
+        item.appendChild(hintLabel);
+      }
+    } else if (mode === RECENTS_MODE) {
+      const { fileName, dir } = describeRecentProject(entry);
+      item.appendChild(document.createTextNode(fileName));
+      const dirLabel = document.createElement('span');
+      dirLabel.className = 'recent-dir';
+      dirLabel.textContent = dir;
+      item.appendChild(dirLabel);
+    } else {
+      item.appendChild(document.createTextNode(entry.unitName));
+      const pathLabel = document.createElement('span');
+      pathLabel.className = 'recent-dir';
+      pathLabel.textContent = entry.path;
+      item.appendChild(pathLabel);
     }
 
     item.addEventListener('click', () => {
       this.dispatchEvent(new CustomEvent('selection-confirmed', {
-        detail: { item: command, mode: COMMANDS_MODE }
+        detail: { item: entry, mode }
       }));
     });
     return item;
-  }
-
-  #renderRecentItem(filePath) {
-    const { fileName, dir } = describeRecentProject(filePath);
-    const item = document.createElement('li');
-    item.appendChild(document.createTextNode(fileName));
-
-    const dirLabel = document.createElement('span');
-    dirLabel.className = 'recent-dir';
-    dirLabel.textContent = dir;
-    item.appendChild(dirLabel);
-
-    item.addEventListener('click', () => {
-      this.dispatchEvent(new CustomEvent('selection-confirmed', {
-        detail: { item: filePath, mode: RECENTS_MODE }
-      }));
-    });
-    return item;
-  }
-
-  #renderRootUnitItem(projectUnit) {
-    const item = document.createElement('li');
-    item.appendChild(document.createTextNode(projectUnit.unitName));
-
-    const pathLabel = document.createElement('span');
-    pathLabel.className = 'recent-dir';
-    pathLabel.textContent = projectUnit.path;
-    item.appendChild(pathLabel);
-
-    item.addEventListener('click', () => {
-      this.dispatchEvent(new CustomEvent('selection-confirmed', {
-        detail: { item: projectUnit, mode: ROOT_UNIT_MODE }
-      }));
-    });
-    return item;
-  }
-
-  #renderItem(entry) {
-    if (this.#mode === COMMANDS_MODE) return this.#renderCommandItem(entry);
-    if (this.#mode === RECENTS_MODE) return this.#renderRecentItem(entry);
-    return this.#renderRootUnitItem(entry);
   }
 
   #renderList() {
@@ -336,7 +197,7 @@ export class CommandPalette extends HTMLElement {
     this.#emptyMessage.classList.toggle('show', this.#filteredItems.length === 0);
 
     this.#filteredItems.forEach((entry, index) => {
-      const item = this.#renderItem(entry);
+      const item = this.#renderItem(entry, this.#mode);
       if (index === this.#selectedIndex) item.classList.add('selected');
       this.#list.appendChild(item);
     });

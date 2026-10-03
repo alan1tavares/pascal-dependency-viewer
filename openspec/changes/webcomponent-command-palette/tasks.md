@@ -11,8 +11,8 @@
 - [x] 1.6 Implementar navegação (↑, ↓, Enter, Esc) via event listeners em `connectedCallback()` — verificar via keyboard no app que setas movem destaque, Enter seleciona, Esc fecha
 - [x] 1.7 Implementar lógica de click fora do card e modo não-fechável — verificar que click no overlay fecha paleta, e que no modo não-fechável não fecha
 - [x] 1.8 Implementar emissão de eventos `selection-confirmed` (detail: {item, mode}) e `closed` — verificar que eventos são disparados ao abrir DevTools com listener
-- [ ] 1.9 Separar CSS para arquivo `CommandPalette.css` e importar com `?inline` no JS — verificar que Vite bundla sem requisição HTTP extra, CSS aplicado no shadow DOM
-- [ ] 1.10 Consolidar `#renderCommandItem()`, `#renderRecentItem()`, `#renderRootUnitItem()` em 1 método `#renderItem(entry, fields)` — reduz ~40 linhas, mantém funcionalidade idêntica
+- [x] 1.9 Separar CSS para arquivo `CommandPalette.css` e importar com `?inline` no JS — verificar que Vite bundla sem requisição HTTP extra, CSS aplicado no shadow DOM
+- [x] 1.10 Consolidar `#renderCommandItem()`, `#renderRecentItem()`, `#renderRootUnitItem()` em 1 método `#renderItem(entry, mode)` — reduz ~40 linhas, mantém funcionalidade idêntica
 
 ## 2. Refatorar renderer/index.js
 
