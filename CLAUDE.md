@@ -14,9 +14,10 @@ graph from there.
 ## Commands
 
 - `npm start` — launch the Electron app in dev mode (`electron-forge start`, Vite dev server + HMR)
-- `npm test` — run the Jest test suite
+- `npm test` — run the Jest test suite and Vitest
 - `npx jest src/domain/test/parsePascalSource.test.js` — run a single test file
 - `npx jest -t "get the unit name"` — run a single test by name
+- `npx vitest` — run Vitest for componentes Svelte
 - `npm run package` — build a production bundle without creating installers
 - `npm run make` — build platform installers (not configured/exercised beyond the Forge defaults)
 
@@ -188,6 +189,43 @@ per `domain/parsePascalSource/selectUsesFromSource.js`'s Uses Clause Origin
 — see `CONTEXT.md`). When expanding from a Root Unit, nodes get a `group`
 (`projectUnit` or `externalUnit`) used by the renderer's `vis-network`
 options to style them differently.
+
+## Svelte Setup
+
+A partir da branch `feat/svelte`, o projeto integra **Svelte** como framework UI moderno, coexistindo com o código vanilla JavaScript existente. A estratégia é gradual: novos componentes são escritos em Svelte por padrão; componentes vanilla serão migrados incrementalmente em branches temáticas futuras, até atingir 100% Svelte.
+
+### Estrutura de Componentes Svelte
+
+- **`src/renderer/components/`**: Componentes vanilla (`.js`) e Svelte (`.svelte`) convivem aqui. Ao remover vanilla, a pasta conterá apenas Svelte.
+- **`src/renderer/stores/`**: Estado reativo gerenciado com `svelte/store` nativo. Cada store (`project.js`, etc.) encapsula um domínio de estado e é alimentado pela IPC Bridge.
+- **`src/renderer/services/`**: "IPC Bridges" — módulos que envolvem `ipcRenderer.invoke` com funções puras. Componentes Svelte chamam a Bridge, não IPC direto.
+
+**Padrão de comunicação Svelte ↔ Main Process**:
+1. Componente Svelte chama `src/renderer/services/ipc.js` (ex.: `openProject(path)`)
+2. Bridge invoca `ipcRenderer.invoke('project:open', ...)` via `window.pascalDependencyViewer`
+3. Main process responde; Bridge atualiza `src/renderer/stores/` (ex.: `projectStore`)
+4. Componentes Svelte observam a store e re-renderizam reativamente
+
+### Build e TypeScript
+
+- **Vite**: `vite.renderer.config.mjs` inclui `vite-plugin-svelte`
+- **TypeScript**: Componentes Svelte usam `<script lang="ts">` (opcional, gradual). `src/renderer/services/` e stores têm tipos TypeScript. Código vanilla permanece em JavaScript puro.
+- **Testing**: Vitest + `@testing-library/svelte` para testes de componentes Svelte. Jest continua para `src/domain/`. `npm test` roda ambos.
+- **CSS**: Svelte `<style>` scoped (encapsulado por componente, padrão Svelte). Nenhuma dependência CSS global nova.
+
+### Migração Gradual
+
+Cada branch temática (ex.: `feat/migrate-command-palette-to-svelte`) migra **um** componente vanilla para Svelte. A ordem sugerida é:
+1. `commandPalette.js` → `CommandPalette.svelte` (menor, menos dependências)
+2. `graphView.js` → `GraphView.svelte` (mais complexo, maior ganho)
+
+Após cada migração, o componente vanilla é deletado, a pasta não muda de estrutura.
+
+### Exemplos de Padrão (Esta PR)
+
+- **`src/renderer/services/ipc.js`**: Bridge com `openProject()`, demonstra padrão.
+- **`src/renderer/stores/project.js`**: Store com estado de projeto, alimentado por IPC.
+- **`src/renderer/components/Welcome.svelte`**: Componente validação, renderiza "Svelte is working!".
 
 ## Notes
 

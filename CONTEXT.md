@@ -94,3 +94,30 @@ travessia no momento da geração com a filtragem no momento da exibição; foi
 substituída pela Uses Clause Origin, agora que a visibilidade por origem varia
 independentemente da geração do grafo e, também de forma independente, da
 visibilidade das External Units.
+
+**Svelte Component**:
+Um componente de interface do usuário escrito em Svelte (arquivo `.svelte`),
+compilado via `vite-plugin-svelte`. Dentro deste projeto, componentes Svelte
+coexistem com componentes vanilla JavaScript e são o caminho gradual para
+modernizar a camada de renderização. Novos componentes devem ser Svelte por
+padrão.
+
+**IPC Bridge**:
+Um módulo em `src/renderer/services/` que encapsula chamadas `ipcRenderer.invoke`
+para o main process. Expõe funções puras (ex.: `openProject()`, `expandGraph()`)
+que componentes Svelte chamam sem conhecer detalhes de IPC. A Bridge isola
+a complexidade de comunicação inter-processo e facilita testes.
+_Evitar_: chamar `ipcRenderer` diretamente de componentes — sempre passar por
+uma Bridge.
+
+**Svelte Store**:
+Um estado reativo gerenciado via `svelte/store` (readable, writable, ou derived).
+Usado para estado que é:
+- Compartilhado entre múltiplos componentes (ex.: projeto atual, unidades carregadas)
+- Atualizado reativamentequando dados chegam via IPC
+
+Stores geralmente são alimentados pela IPC Bridge e observados por componentes
+Svelte. Não são persistidos — um reload da aplicação restaura do main process
+via IPC.
+_Evitar_: guardar estado local em variáveis do componente quando ele precisa
+ser compartilhado.
