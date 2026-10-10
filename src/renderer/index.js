@@ -1,3 +1,5 @@
+import { mount } from 'svelte';
+import Welcome from './components/Welcome.svelte';
 import {
   configureCommandPalette,
   enterRootUnitMode,
@@ -6,6 +8,11 @@ import {
 } from './components/commandPalette.js';
 
 const api = window.pascalDependencyViewer;
+
+// Montar componente Svelte de boas-vindas (Svelte 5 API)
+mount(Welcome, {
+  target: document.getElementById('svelte-app'),
+});
 
 let lastProject = null;
 let hasRenderedGraphForCurrentProject = false;
