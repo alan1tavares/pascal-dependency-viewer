@@ -63,7 +63,8 @@
   .welcome {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    width: 100%;
+    min-height: auto;
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     color: #333;
   }

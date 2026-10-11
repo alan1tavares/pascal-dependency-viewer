@@ -10,7 +10,6 @@
     filterRecentProjects,
   } from "../../domain/recentProjects/index.js";
   import { filterProjectUnits } from "../../domain/rootUnitSelection/index.js";
-  import { renderGraph } from "./graphView.js";
   import { markGraphRendered } from "../stores/graph.js";
 
   const api = window.pascalDependencyViewer;
@@ -41,6 +40,7 @@
   let inputValue = $state("");
 
   let inputEl = $state();
+  let graphViewComponent = $state();
 
   let placeholderText = $derived(
     mode === COMMANDS_MODE
@@ -66,6 +66,7 @@
     hasProject = options.hasProject;
     getProject = options.getProject;
     onRootUnitSelected = options.onRootUnitSelected;
+    graphViewComponent = options.graphViewComponent;
   }
 
   function closeCommandPalette() {
@@ -89,7 +90,7 @@
       projectUnit: { path: projectUnit.path, unitName: projectUnit.unitName },
       projectUnits: simplifiedUnits,
     });
-    renderGraph(graph.nodes, graph.edges, graph.rootUnitId);
+    graphViewComponent.renderGraph(graph.nodes, graph.edges, graph.rootUnitId);
     markGraphRendered();
     onRootUnitSelected?.();
     closeCommandPalette();
