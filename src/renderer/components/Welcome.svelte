@@ -30,7 +30,7 @@
         Abra um projeto Delphi (.dpr) para começar a visualizar as dependências entre suas units.
       </p>
 
-      <button class="primary-btn" on:click={openProject}>
+      <button class="primary-btn" onclick={openProject}>
         Abrir Projeto (.dpr)
       </button>
 
@@ -60,10 +60,9 @@
   .welcome {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    min-height: 100vh;
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     color: #333;
-    overflow-y: auto;
   }
 
   .header {
