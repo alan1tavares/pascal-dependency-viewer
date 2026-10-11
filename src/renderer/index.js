@@ -1,5 +1,6 @@
 import { mount } from 'svelte';
 import Welcome from './components/Welcome.svelte';
+import GraphView from './components/GraphView.svelte';
 import {
   configureCommandPalette,
   enterRootUnitMode,
@@ -13,6 +14,10 @@ mount(Welcome, {
   target: document.getElementById('svelte-app'),
 });
 
+const graphViewComponent = mount(GraphView, {
+  target: document.getElementById('mynetwork'),
+});
+
 let lastProject = null;
 let hasRenderedGraphForCurrentProject = false;
 
@@ -24,6 +29,7 @@ configureCommandPalette({
   hasProject: () => lastProject !== null,
   getProject: () => lastProject,
   onRootUnitSelected,
+  graphViewComponent,
 });
 
 api.onProjectLoaded((project) => {
