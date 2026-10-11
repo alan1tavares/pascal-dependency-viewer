@@ -14,10 +14,10 @@ graph from there.
 ## Commands
 
 - `npm start` — launch the Electron app in dev mode (`electron-forge start`, Vite dev server + HMR)
-- `npm test` — run the Jest test suite and Vitest
-- `npx jest src/domain/test/parsePascalSource.test.js` — run a single test file
-- `npx jest -t "get the unit name"` — run a single test by name
-- `npx vitest` — run Vitest for componentes Svelte
+- `npm test` — run all tests (Vitest for domínio + componentes Svelte)
+- `npm run test:watch` — run tests in watch mode
+- `npx vitest run src/domain/test/parsePascalSource.test.js` — run a single test file
+- `npx vitest run -t "get the unit name"` — run a single test by name
 - `npm run package` — build a production bundle without creating installers
 - `npm run make` — build platform installers (not configured/exercised beyond the Forge defaults)
 
