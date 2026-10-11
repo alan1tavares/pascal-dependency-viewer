@@ -1,4 +1,5 @@
-import { jest } from '@jest/globals';
+// Vitest globals (describe, it, expect) são ativadas automaticamente via vitest.config.mjs
+import { vi } from 'vitest';
 import expandDependencyGraph from '../expandDependencyGraph/index.js';
 
 function fakeReadFile(sources) {
@@ -37,7 +38,7 @@ test('expansão de duas camadas via Project Unit intermediária', () => {
 
 test('External Unit encontrada durante a expansão não é lida do disco', () => {
    const projectUnits = [{ unitName: 'UnitA', path: 'UnitA.pas' }];
-   const readFile = jest.fn(fakeReadFile({
+   const readFile = vi.fn(fakeReadFile({
       'UnitA.pas': 'unit UnitA; interface uses Vcl.Forms; implementation end.',
    }));
 
@@ -62,7 +63,7 @@ test('dependência em diamante gera um único nó com dois edges', () => {
       { unitName: 'UnitC', path: 'UnitC.pas' },
       { unitName: 'UnitD', path: 'UnitD.pas' },
    ];
-   const readFile = jest.fn(fakeReadFile({
+   const readFile = vi.fn(fakeReadFile({
       'UnitA.pas': 'unit UnitA; interface uses UnitB, UnitC; implementation end.',
       'UnitB.pas': 'unit UnitB; interface uses UnitD; implementation end.',
       'UnitC.pas': 'unit UnitC; interface uses UnitD; implementation end.',
