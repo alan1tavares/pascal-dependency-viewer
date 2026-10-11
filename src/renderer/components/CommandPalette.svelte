@@ -11,6 +11,7 @@
   } from "../../domain/recentProjects/index.js";
   import { filterProjectUnits } from "../../domain/rootUnitSelection/index.js";
   import { renderGraph } from "./graphView.js";
+  import { markGraphRendered } from "../stores/graph.js";
 
   const api = window.pascalDependencyViewer;
   const isMac = api.platform === "darwin";
@@ -89,6 +90,7 @@
       projectUnits: simplifiedUnits,
     });
     renderGraph(graph.nodes, graph.edges, graph.rootUnitId);
+    markGraphRendered();
     onRootUnitSelected?.();
     closeCommandPalette();
   }

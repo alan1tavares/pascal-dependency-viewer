@@ -55,3 +55,34 @@ opções de estilo esperadas.
 
 Não é bloqueante — é só um lembrete para quando o projeto decidir investir
 em testes da camada de renderer.
+
+# Sugestão — cenários de `welcome-screen` sem teste automatizado
+
+Origem: verificação da change `ocultar-boas-vindas-apos-grafo`
+(`/opsx:verify`, 2026-10-11).
+
+## O problema
+
+Nenhum dos 4 cenários da spec `welcome-screen`
+(`openspec/changes/ocultar-boas-vindas-apos-grafo/specs/welcome-screen/spec.md`)
+— "App aberto sem Projeto", "Projeto carregado sem Root Unit", "Grafo
+renderizado ao escolher Root Unit" e "Novo Projeto após o primeiro grafo" —
+tem teste automatizado cobrindo o comportamento de `graphRenderedStore`
+(`src/renderer/stores/graph.js`) e `Welcome.svelte`. A verificação foi só
+manual (`npm start`) e por leitura de código.
+
+Isso é consistente com o resto do projeto: `vitest.config.mjs` ainda
+restringe `include` a `src/domain/test/**`, e `@testing-library/svelte`
+(já previsto no `CLAUDE.md` para testar componentes Svelte) não está
+instalado. Não é uma lacuna introduzida especificamente por esta change.
+
+## Sugestão
+
+Quando a infraestrutura de teste de componentes Svelte for configurada,
+adicionar testes para `Welcome.svelte` cobrindo os 4 cenários acima —
+em particular, que o componente deixa de renderizar qualquer conteúdo
+depois que `graphRenderedStore` vai para `true`, e que isso permanece
+assim mesmo após um novo Projeto ser carregado.
+
+Não é bloqueante — é só um lembrete para quando o projeto decidir investir
+em testes da camada de renderer.
