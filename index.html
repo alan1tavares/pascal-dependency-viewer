@@ -17,68 +17,18 @@
         flex-direction: column;
       }
 
-      #svelte-app {
-        display: flex;
-        flex-direction: column;
-        flex: 0 0 auto;
-        width: 100%;
-        overflow: hidden;
-      }
-
-      #mynetwork {
+      /* Sem altura resolvível aqui, o canvas da vis-network dimensiona o
+         container e o container dimensiona o canvas, crescendo sem parar. */
+      #app {
         flex: 1;
+        min-height: 0;
         width: 100%;
-        box-sizing: border-box;
         overflow: hidden;
       }
-
-      #viewFilterPanel {
-        display: none;
-        position: fixed;
-        top: 16px;
-        right: 16px;
-        z-index: 10;
-        background: white;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        padding: 8px 12px;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-        font-family: sans-serif;
-        font-size: 14px;
-      }
-
-      #viewFilterPanel p {
-        margin: 0 0 6px;
-        font-weight: bold;
-      }
-
-      #viewFilterPanel label {
-        display: block;
-      }
-
     </style>
   </head>
   <body>
-    <div id="svelte-app"></div>
-
-    <div id="mynetwork"></div>
-
-    <div id="viewFilterPanel">
-      <p>View Filter</p>
-      <label>
-        <input type="checkbox" id="viewFilterInterface" checked />
-        Interface
-      </label>
-      <label>
-        <input type="checkbox" id="viewFilterImplementation" checked />
-        Implementação
-      </label>
-      <label>
-        <input type="checkbox" id="viewFilterExternal" />
-        Unidades Externas
-      </label>
-    </div>
-
+    <div id="app"></div>
     <div id="commandPaletteContainer"></div>
 
     <script type="module" src="/src/renderer/index.js"></script>

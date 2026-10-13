@@ -40,6 +40,7 @@
   let inputValue = $state("");
 
   let inputEl = $state();
+  let overlayEl = $state();
   let graphViewComponent = $state();
 
   let placeholderText = $derived(
@@ -256,6 +257,7 @@
 {#if isOpen}
   <div
     id="commandPaletteOverlay"
+    bind:this={overlayEl}
     onmousedown={handleOverlayMousedown}
     role="presentation"
   >

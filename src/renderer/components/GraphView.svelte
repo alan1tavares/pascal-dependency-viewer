@@ -107,9 +107,9 @@
 
   .network-container {
     flex: 1;
+    min-height: 0;
     display: none;
     width: 100%;
-    height: 100%;
   }
 
   .filter-panel {

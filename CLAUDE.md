@@ -81,25 +81,20 @@ layout — plain JavaScript, no UI framework, no `shared/` — was chosen).
   `platform`, the `process.platform` string the renderer uses to pick shortcut
   hints);
   `preload/index.js` is just the `contextBridge.exposeInMainWorld` call.
-- `src/renderer/index.js` + `src/renderer/components/{graphView,commandPalette}.js`:
-  `index.js` is the entrypoint (wires the IPC listeners below, configures the
-  palette via `configureCommandPalette({ hasProject, getProject,
-  onRootUnitSelected })`, and tracks `hasRenderedGraphForCurrentProject` per
-  Project); `graphView.js` renders the `vis-network` graph; `commandPalette.js`
-  drives the Command Palette overlay (markup/styles live in `index.html`) —
-  the single search/pick UI for the whole app, with three modes: the Command
-  list (`Digite um comando`, no prefix), `Abrir recente` (Recent Projects,
-  fixed `Abrir recente` prefix) and `Selecionar Unit` (the Root Unit
-  search/listing, no prefix — see capability `root-unit-selection`). `Esc` in
-  a non-Command mode goes back to the Command list when that mode was entered
-  through its own Command in the list (`Abrir recente`/`Selecionar Unit`),
-  and closes the palette entirely when entered by menu/atalho (`Cmd/Ctrl+K R`,
-  or `Edição > Selecionar Unit`); clicking outside the card always closes the
-  palette entirely, regardless of how the mode was entered. The `Selecionar
-  Unit` mode opened automatically right after a Project loads (before any
-  Root Unit has been chosen for it) is additionally marked non-closable:
-  `Esc`, clicking outside, and the `Cmd/Ctrl+P`/`Cmd/Ctrl+K R` shortcuts all
-  have no effect until a Root Unit is chosen.
+- `src/renderer/index.js`: minimal entrypoint that mounts `App.svelte` to
+  `#app` in `index.html`.
+- `src/renderer/components/App.svelte`: root component that orquestra Welcome,
+  GraphView, and CommandPalette Svelte components. Centralizes IPC listeners
+  from `window.pascalDependencyViewer` (onProjectLoaded, onShowCommandPalette,
+  onShowOpenRecent, onShowRootUnitSelection) and manages `viewMode` store
+  ('welcome' | 'graph') to determine which view is visible.
+- `src/renderer/components/{Welcome,GraphView,CommandPalette}.svelte`: Svelte
+  components for the welcome screen, dependency graph visualization (via
+  `vis-network`), and command palette (search/pick UI with three modes: Command
+  list, Abrir recente, and Selecionar Unit — see capabilities for details).
+- `src/renderer/stores/{project,graph,ui}.js`: reactive state (Svelte stores):
+  `project.js` holds the loaded project; `graph.js` tracks if a graph has been
+  rendered; `ui.js` tracks view mode ('welcome' | 'graph').
 - `src/domain/commands/`: the Command catalog (`COMMANDS`: `openProject`,
   `openRecent`, `selectUnit`) plus the pure `availableCommands`
   (`selectUnit` needs a Project), `filterCommands` (case- and

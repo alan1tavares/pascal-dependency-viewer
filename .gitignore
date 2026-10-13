@@ -94,3 +94,7 @@ out/
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Test artifacts
+test-results/
+playwright-report/
