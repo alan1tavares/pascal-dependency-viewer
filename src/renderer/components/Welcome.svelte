@@ -64,9 +64,12 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    min-height: auto;
+    height: 100%;
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     color: #333;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
   }
 
   .header {
