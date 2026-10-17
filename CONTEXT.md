@@ -25,9 +25,9 @@ sessões, ao contrário do Project aberto no momento.
 
 **Command**:
 Uma ação nomeada do app que o usuário pode disparar pelo nome. Tem um rótulo
-e, opcionalmente, um atalho de teclado. Commands iniciais: `Abrir projeto
-(.dpr)`, `Abrir recente` e `Selecionar Unit`. Um Command que não pode fazer
-nada no estado atual (ex.: `Selecionar Unit` antes de qualquer Project ter
+e, opcionalmente, um atalho de teclado. Commands: `Abrir projeto (.dpr)`,
+`Abrir recente`, `Selecionar Unit` e `Bem-vindo`. Um Command que não pode
+fazer nada no estado atual (ex.: `Selecionar Unit` antes de qualquer Project ter
 sido aberto) não é oferecido.
 _Evitar_: "item de menu" ou "ação" — impreciso; o menu nativo é apenas um dos
 lugares de onde um Command pode ser disparado.
@@ -80,10 +80,10 @@ declarada em ambas as seções carrega ambas as origens. É uma propriedade dos
 dados do grafo, independente do que a tela do grafo exibe no momento.
 
 **View Filter**:
-Quais partes do Dependency Graph já calculado são exibidas no momento na tela
-do grafo. É escolhido na própria tela do grafo e não é persistido — alterá-lo
-renderiza novamente o grafo existente sem percorrer o sistema de arquivos de
-novo. São dois eixos independentes, cada um alternado separadamente:
+Quais partes do Dependency Graph já calculado são exibidas no momento em uma
+Graph Tab. É escolhido na própria Graph Tab, vale só para ela e não é
+persistido — alterá-lo renderiza novamente o grafo existente sem percorrer o
+sistema de arquivos de novo. São dois eixos independentes, cada um alternado separadamente:
 - **Uses Clause Origin** (`interface`, `implementation` ou ambos): ao menos
   uma está sempre selecionada; o padrão é ambas.
 - **Visibilidade das External Units**: exibe ou oculta todos os nós de
@@ -94,6 +94,28 @@ travessia no momento da geração com a filtragem no momento da exibição; foi
 substituída pela Uses Clause Origin, agora que a visibilidade por origem varia
 independentemente da geração do grafo e, também de forma independente, da
 visibilidade das External Units.
+
+**Tab**:
+Uma das telas abertas na área principal da janela, selecionável pela barra
+de abas, no estilo das abas de editor do VSCode. Apenas uma Tab fica ativa
+(visível) por vez, e o usuário pode fechar qualquer uma; se todas forem
+fechadas, a Welcome Tab volta a ser exibida. Há dois tipos: Welcome Tab e
+Graph Tab.
+_Evitar_: "janela", "view" ou "tela" para se referir a uma Tab — a janela é
+uma só, e "tela" é genérico demais.
+
+**Welcome Tab**:
+A Tab de boas-vindas, aberta ao iniciar o app. Continua aberta depois que um
+Project é carregado, até o usuário fechá-la; pode ser reaberta pelo Command
+`Bem-vindo`. Existe no máximo uma, e não pode ser fechada quando é a única
+Tab aberta.
+
+**Graph Tab**:
+Uma Tab que exibe o Dependency Graph de uma Root Unit do Project aberto, e é
+identificada por essa Root Unit: escolher uma Root Unit que já tem Graph Tab
+apenas a ativa, e escolher uma nova abre uma nova Graph Tab. Cada Graph Tab
+guarda seu próprio View Filter e o enquadramento do grafo enquanto estiver
+aberta. Abrir um Project fecha todas as Graph Tabs existentes.
 
 **Svelte Component**:
 Um componente de interface do usuário escrito em Svelte (arquivo `.svelte`),

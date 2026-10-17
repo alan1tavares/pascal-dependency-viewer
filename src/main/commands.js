@@ -11,5 +11,8 @@ export async function runCommand(id, { webContents, performOpenProject }) {
     case "openRecent":
       webContents.send("app:show-open-recent");
       break;
+    case "showWelcome":
+      webContents.send("app:show-welcome");
+      break;
   }
 }

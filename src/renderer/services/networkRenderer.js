@@ -80,10 +80,6 @@ class NetworkRenderer {
     this.visEdges.clear();
     this.visEdges.add(edgeList);
 
-    if (this.containerEl) {
-      this.containerEl.style.display = 'block';
-    }
-
     this.fitView();
   }
 
@@ -151,7 +147,7 @@ class NetworkRenderer {
   fitView() {
     if (this.networkInstance) {
       setTimeout(() => {
-        this.networkInstance.fit({ animation: false });
+        this.networkInstance?.fit({ animation: false });
       }, 50);
     }
   }

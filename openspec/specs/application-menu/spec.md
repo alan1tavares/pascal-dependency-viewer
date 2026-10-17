@@ -117,8 +117,9 @@ busca/listagem de Root Unit já existente (capability
 `Abrir projeto (.dpr)`, seja pela opção `Abrir recente`, seja por qualquer
 expansão de grafo já feita a partir dele) — sem reabrir o diálogo nativo de
 seleção de arquivo `.dpr` e sem reler o `.dpr` do disco. O usuário pode então
-escolher uma Project Unit diferente como nova Root Unit, disparando a mesma
-expansão de grafo já coberta pela capability `root-unit-selection`.
+escolher uma Project Unit como Root Unit, o que abre (ou ativa, se já
+existir) a Graph Tab dela, como coberto pelas capabilities
+`root-unit-selection` e `tabs`, sem fechar as Graph Tabs já abertas.
 
 Se nenhum Projeto tiver sido carregado ainda nesta sessão (nenhum
 `app:project-loaded` recebido), clicar em `Selecionar Unit` SHALL não ter
@@ -127,8 +128,8 @@ Project Units para listar), nem exibir qualquer diálogo.
 
 #### Scenario: Usuário reabre a tela de Root Unit a partir do grafo já renderizado
 - **WHEN** o usuário já abriu um Projeto (`UnitA`, `UnitB`, `UnitC` como
-  Project Units), já escolheu `UnitA` como Root Unit e está vendo o grafo
-  renderizado, e então clica em `Selecionar Unit` no menu `Edição`
+  Project Units), já escolheu `UnitA` como Root Unit e está com a Graph
+  Tab `UnitA` ativa, e então clica em `Selecionar Unit` no menu `Edição`
 - **THEN** a tela de busca/listagem de Root Unit é exibida novamente, com
   as mesmas três Project Units do Projeto aberto, sem precisar reabrir o
   `.dpr` pelo menu `Arquivo`
@@ -138,8 +139,15 @@ Project Units para listar), nem exibir qualquer diálogo.
   clica em `UnitB`
 - **THEN** o grafo é expandido a partir de `UnitB` exatamente como
   aconteceria ao escolher `UnitB` na tela original de Root Unit
-  (capability `root-unit-selection`), substituindo o grafo de `UnitA`
-  exibido anteriormente
+  (capability `root-unit-selection`), numa nova Graph Tab `UnitB` que fica
+  ativa, e a Graph Tab `UnitA` continua aberta
+
+#### Scenario: Usuário reabre a tela de Root Unit sem nenhuma Graph Tab
+- **WHEN** o usuário abriu um Projeto, fechou o modo `Selecionar Unit`
+  exibido automaticamente sem escolher nada, e clica em `Selecionar Unit`
+  no menu `Edição`
+- **THEN** a tela de busca/listagem de Root Unit é exibida com as Project
+  Units desse Projeto
 
 #### Scenario: "Selecionar Unit" clicado sem nenhum Projeto carregado
 - **WHEN** o usuário clica em `Selecionar Unit` antes de ter aberto
@@ -163,7 +171,7 @@ entre `Edição` e o menu de visualização, contendo exatamente uma opção:
 (capability `command-palette`) e SHALL ter o atalho de teclado `Cmd+P` no
 macOS e `Ctrl+P` no Linux, exibido ao lado do rótulo do item. Acionar o
 atalho SHALL produzir exatamente o mesmo efeito que clicar no item, a partir
-de qualquer tela do app.
+de qualquer Tab do app.
 
 #### Scenario: Usuário abre o menu `Ferramentas`
 - **WHEN** o usuário abre o menu `Ferramentas`
@@ -171,8 +179,8 @@ de qualquer tela do app.
 
 #### Scenario: Ordem dos menus
 - **WHEN** o app é iniciado
-- **THEN** a barra de menus exibe `Arquivo`, `Edição`, `Ferramentas` e, em
-  seguida, o menu de visualização
+- **THEN** a barra de menus exibe `Arquivo`, `Edição`, `Ferramentas`, o menu
+  de visualização e, por último, `Ajuda`
 
 #### Scenario: Atalho exibido no item "Paleta de Comandos"
 - **WHEN** o usuário abre o menu `Ferramentas` no macOS ou no Linux
@@ -189,3 +197,24 @@ de qualquer tela do app.
   janela do app em foco
 - **THEN** a Command Palette é exibida, exatamente como no clique em
   `Paleta de Comandos`
+
+### Requirement: Menu `Ajuda` com "Bem-vindo"
+O sistema SHALL expor um menu nativo rotulado `Ajuda`, posicionado depois do
+menu de visualização, contendo exatamente uma opção: `Bem-vindo`, sem atalho
+de teclado. `Bem-vindo` SHALL ativar a Welcome Tab, abrindo-a antes no fim
+da barra se ela tiver sido fechada (capability `tabs`). O efeito SHALL ser o
+mesmo do Command `Bem-vindo` da Command Palette.
+
+#### Scenario: Usuário abre o menu `Ajuda`
+- **WHEN** o usuário abre o menu `Ajuda`
+- **THEN** exatamente uma opção é exibida: `Bem-vindo`
+
+#### Scenario: Usuário clica em "Bem-vindo" com a Welcome Tab fechada
+- **WHEN** a Welcome Tab foi fechada, a Graph Tab `UnitA` está ativa e o
+  usuário clica em `Ajuda > Bem-vindo`
+- **THEN** a Welcome Tab é aberta no fim da barra e fica ativa
+
+#### Scenario: Usuário clica em "Bem-vindo" com a Welcome Tab aberta
+- **WHEN** as Tabs `Bem-vindo` e `UnitA` estão abertas, `UnitA` está ativa, e
+  o usuário clica em `Ajuda > Bem-vindo`
+- **THEN** `Bem-vindo` passa a ser a Tab ativa e nenhuma nova Tab é aberta

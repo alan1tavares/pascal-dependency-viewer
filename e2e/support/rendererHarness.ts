@@ -50,7 +50,15 @@ export async function stubPreload(page: Page, graph: Graph = SAMPLE_GRAPH) {
     ;(window as any).pascalDependencyViewer = {
       platform: 'darwin',
       openProject: async () => null,
-      expandFromRootUnit: async () => graph,
+      // `__expandGate` (Promise) segura a resposta e `__expandFail` (nome da
+      // unit) a faz falhar, para os testes simularem um main lento ou com erro.
+      expandFromRootUnit: async ({ projectUnit }: { projectUnit: { unitName: string } }) => {
+        const w = window as any
+        w.__expandCalls = (w.__expandCalls || 0) + 1
+        if (w.__expandGate) await w.__expandGate
+        if (w.__expandFail === projectUnit.unitName) throw new Error('arquivo não encontrado')
+        return { ...graph, rootUnitId: projectUnit.unitName.toLowerCase() }
+      },
       listRecentProjects: async () => [],
       openRecentProject: async () => {},
       runCommand: async () => {},
@@ -58,6 +66,7 @@ export async function stubPreload(page: Page, graph: Graph = SAMPLE_GRAPH) {
       onShowCommandPalette: on('app:show-command-palette'),
       onShowOpenRecent: on('app:show-open-recent'),
       onShowRootUnitSelection: on('app:show-root-unit-selection'),
+      onShowWelcome: on('app:show-welcome'),
     }
   }, graph)
 }
@@ -68,6 +77,17 @@ export async function loadProject(page: Page, project = SAMPLE_PROJECT) {
 
 export function networkContainerHeight(page: Page) {
   return page.evaluate(() =>
-    Math.round(document.querySelector('.network-container')!.getBoundingClientRect().height)
+    Math.round(document.querySelector('.tab-panel.active .network-container')!.getBoundingClientRect().height)
   )
+}
+
+export function emit(page: Page, channel: string, payload?: unknown) {
+  return page.evaluate(([c, p]) => (window as any).__emit(c, p), [channel, payload] as const)
+}
+
+/** Escolhe uma Root Unit no modo `Selecionar Unit` da Command Palette, que já
+ * deve estar aberto. */
+export async function pickRootUnit(page: Page, unitName: string) {
+  await page.locator('#commandPaletteInput').fill(unitName)
+  await page.locator('#commandPaletteList .commandItem', { hasText: unitName }).first().click()
 }

@@ -2,8 +2,9 @@
   import { onMount, onDestroy } from 'svelte';
   import NetworkRenderer from '../services/networkRenderer.js';
 
+  let { graph } = $props();
+
   let containerEl = $state();
-  let filterPanelEl = $state();
   let networkRenderer = $state(null);
 
   let interfaceVisible = $state(true);
@@ -22,6 +23,7 @@
   onMount(() => {
     networkRenderer = new NetworkRenderer(containerEl);
     networkRenderer.initialize();
+    networkRenderer.renderGraph(graph.nodes, graph.edges, graph.rootUnitId);
   });
 
   onDestroy(() => {
@@ -37,21 +39,6 @@
     applyViewFilter();
   });
 
-  export function renderGraph(nodes, edges, rootUnit) {
-    if (!networkRenderer) return;
-    networkRenderer.renderGraph(nodes, edges, rootUnit);
-
-    // Aplicar filtros após renderizar
-    applyViewFilter();
-
-    if (containerEl) {
-      containerEl.style.display = 'block';
-    }
-    if (filterPanelEl) {
-      filterPanelEl.style.display = 'block';
-    }
-  }
-
   function applyViewFilter() {
     if (!networkRenderer) return;
     networkRenderer.applyFilter({
@@ -65,11 +52,11 @@
 <div class="graph-container">
   <div bind:this={containerEl} class="network-container"></div>
 
-  <div bind:this={filterPanelEl} class="filter-panel">
+  <div class="filter-panel">
     <label>
       <input
         type="checkbox"
-        id="viewFilterInterface"
+        class="viewFilterInterface"
         bind:checked={interfaceVisible}
         onchange={handleCheckboxChange}
       />
@@ -78,7 +65,7 @@
     <label>
       <input
         type="checkbox"
-        id="viewFilterImplementation"
+        class="viewFilterImplementation"
         bind:checked={implementationVisible}
         onchange={handleCheckboxChange}
       />
@@ -87,7 +74,7 @@
     <label>
       <input
         type="checkbox"
-        id="viewFilterExternal"
+        class="viewFilterExternal"
         bind:checked={externalVisible}
         onchange={handleCheckboxChange}
       />
@@ -108,13 +95,11 @@
   .network-container {
     flex: 1;
     min-height: 0;
-    display: none;
     width: 100%;
   }
 
   .filter-panel {
-    display: none;
-    position: fixed;
+    position: absolute;
     top: 16px;
     right: 16px;
     background: white;

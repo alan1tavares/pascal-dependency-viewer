@@ -17,6 +17,11 @@ export const api = {
     ipcRenderer.on('app:show-open-recent', listener);
     return () => ipcRenderer.removeListener('app:show-open-recent', listener);
   },
+  onShowWelcome: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on('app:show-welcome', listener);
+    return () => ipcRenderer.removeListener('app:show-welcome', listener);
+  },
   onProjectLoaded: (callback) => {
     const listener = (_event, project) => callback(project);
     ipcRenderer.on('app:project-loaded', listener);

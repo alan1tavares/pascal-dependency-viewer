@@ -64,6 +64,15 @@ export function buildMenu(
       ],
     },
     { role: "viewMenu" },
+    {
+      label: "Ajuda",
+      submenu: [
+        {
+          label: labelOf("showWelcome"),
+          click: () => run("showWelcome"),
+        },
+      ],
+    },
   ];
 
   const menu = Menu.buildFromTemplate(template);

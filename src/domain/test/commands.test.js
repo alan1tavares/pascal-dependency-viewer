@@ -7,16 +7,18 @@ import {
 
 const labels = (commands) => commands.map((command) => command.label);
 
-test('o catálogo tem Abrir projeto (.dpr), Abrir recente e Selecionar Unit, nesta ordem', () => {
+test('o catálogo tem Abrir projeto (.dpr), Abrir recente, Selecionar Unit e Bem-vindo, nesta ordem', () => {
   expect(COMMANDS.map((command) => command.id)).toEqual([
     'openProject',
     'openRecent',
     'selectUnit',
+    'showWelcome',
   ]);
   expect(labels(COMMANDS)).toEqual([
     'Abrir projeto (.dpr)',
     'Abrir recente',
     'Selecionar Unit',
+    'Bem-vindo',
   ]);
 });
 
@@ -29,14 +31,16 @@ test('omite Selecionar Unit quando nenhum Project foi aberto', () => {
   expect(labels(availableCommands(COMMANDS, { hasProject: false }))).toEqual([
     'Abrir projeto (.dpr)',
     'Abrir recente',
+    'Bem-vindo',
   ]);
 });
 
-test('lista os três Commands, nesta ordem, quando há Project aberto', () => {
+test('lista os quatro Commands, nesta ordem, quando há Project aberto', () => {
   expect(labels(availableCommands(COMMANDS, { hasProject: true }))).toEqual([
     'Abrir projeto (.dpr)',
     'Abrir recente',
     'Selecionar Unit',
+    'Bem-vindo',
   ]);
 });
 

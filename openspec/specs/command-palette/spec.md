@@ -7,58 +7,9 @@ Recent Projects.
 
 ## Requirements
 
-### Requirement: Abertura da Command Palette por menu ou atalho
-O sistema SHALL abrir a Command Palette, no modo lista de Commands, ao clicar
-no item `Paleta de Comandos` do menu `Ferramentas` ou ao pressionar `Cmd+P`
-(macOS) / `Ctrl+P` (Linux), com a janela em foco e a partir de qualquer tela
-do app. A paleta SHALL abrir mesmo que nenhum Project tenha sido aberto na
-sessão.
-
-Se a paleta já estiver aberta, acionar o atalho ou o item de menu SHALL
-devolver o foco ao input no modo lista de Commands, sem abrir uma segunda
-instância: se ela estava no modo `Abrir recente`, volta à lista de Commands.
-
-Se a paleta estiver aberta no modo `Selecionar Unit` (capability
-`root-unit-selection`) e esse modo estiver marcado não-fechável — a
-abertura automática que ocorre antes de qualquer Root Unit ter sido
-escolhida para o Project atual —, acionar o atalho ou o item de menu SHALL
-não ter efeito algum: a paleta permanece no modo `Selecionar Unit`.
-
-#### Scenario: Abrir pelo menu
-- **WHEN** o usuário clica em `Ferramentas > Paleta de Comandos`
-- **THEN** a Command Palette é exibida no modo lista de Commands
-
-#### Scenario: Abrir pelo atalho
-- **WHEN** o usuário pressiona `Cmd+P` (macOS) ou `Ctrl+P` (Linux)
-- **THEN** a Command Palette é exibida no modo lista de Commands
-
-#### Scenario: Paleta abre sem Project carregado
-- **WHEN** o usuário aciona a paleta antes de abrir qualquer Project na
-  sessão
-- **THEN** a paleta é exibida normalmente
-
-#### Scenario: Paleta já aberta
-- **WHEN** a paleta já está aberta no modo lista de Commands e o usuário
-  aciona o atalho ou o item de menu de novo
-- **THEN** o foco volta ao input e continua existindo uma única instância da
-  paleta
-
-#### Scenario: Atalho da paleta com a paleta no modo recentes
-- **WHEN** a paleta está aberta no modo `Abrir recente` e o usuário aciona
-  `Cmd/Ctrl+P`
-- **THEN** a paleta passa a exibir a lista de Commands, com o input vazio e
-  o foco nele
-
-#### Scenario: Atalho não tem efeito no modo Selecionar Unit obrigatório
-- **WHEN** a paleta está aberta no modo `Selecionar Unit` obrigatório
-  (nenhuma Root Unit escolhida ainda para o Project atual) e o usuário
-  pressiona `Cmd/Ctrl+P`
-- **THEN** nada acontece: a paleta permanece no modo `Selecionar Unit`, sem
-  voltar à lista de Commands
-
 ### Requirement: Aparência e conteúdo do modo lista de Commands
 A paleta SHALL ser exibida como um overlay dentro da página do app, no topo e
-centralizado horizontalmente, sobre a tela atual, com o mesmo aspecto do
+centralizado horizontalmente, sobre a Tab ativa, com o mesmo aspecto do
 modo `Abrir recente`. No modo lista de Commands o input NÃO SHALL ter prefixo
 fixo e SHALL exibir o texto de ajuda `Digite um comando` enquanto estiver
 vazio. Abaixo do input SHALL haver a lista de Commands disponíveis.
@@ -69,15 +20,15 @@ estar destacado e o foco SHALL estar no input.
 
 As dicas de atalho SHALL seguir a plataforma: `⌘O` (macOS) / `Ctrl+O`
 (Linux) para `Abrir projeto (.dpr)` e `⌘K R` (macOS) / `Ctrl+K R` (Linux)
-para `Abrir recente`. `Selecionar Unit` não tem atalho e SHALL ser exibido
-sem dica.
+para `Abrir recente`. `Selecionar Unit` e `Bem-vindo` não têm atalho e SHALL
+ser exibidos sem dica.
 
 #### Scenario: Paleta lista os Commands com dicas de atalho
 - **WHEN** um Project está aberto e o usuário abre a paleta no Linux
 - **THEN** o input mostra `Digite um comando` sem prefixo, a lista mostra
-  `Abrir projeto (.dpr)` com `Ctrl+O`, `Abrir recente` com `Ctrl+K R` e
-  `Selecionar Unit` sem dica, o primeiro item está destacado e o foco está no
-  input
+  `Abrir projeto (.dpr)` com `Ctrl+O`, `Abrir recente` com `Ctrl+K R`,
+  `Selecionar Unit` sem dica e `Bem-vindo` sem dica, o primeiro item está
+  destacado e o foco está no input
 
 #### Scenario: Dicas de atalho no macOS
 - **WHEN** o usuário abre a paleta no macOS
@@ -85,21 +36,23 @@ sem dica.
 
 ### Requirement: Catálogo de Commands e disponibilidade
 A lista de Commands SHALL conter, nesta ordem, `Abrir projeto (.dpr)`, `Abrir
-recente` e `Selecionar Unit`. `Selecionar Método` e `Sair` NÃO SHALL ser
-Commands da paleta.
+recente`, `Selecionar Unit` e `Bem-vindo`. `Selecionar Método`, `Sair` e as
+ações de fechar ou alternar Tabs NÃO SHALL ser Commands da paleta.
 
 `Selecionar Unit` SHALL ser exibido somente se algum Project já tiver sido
 aberto na sessão (mesmo critério usado por `Edição > Selecionar Unit`); caso
-contrário SHALL ser omitido da lista.
+contrário SHALL ser omitido da lista. `Bem-vindo` SHALL ser exibido sempre,
+inclusive quando a Welcome Tab já está aberta.
 
 #### Scenario: Sem Project aberto
 - **WHEN** nenhum Project foi aberto na sessão e o usuário abre a paleta
-- **THEN** a lista mostra apenas `Abrir projeto (.dpr)` e `Abrir recente`
+- **THEN** a lista mostra `Abrir projeto (.dpr)`, `Abrir recente` e
+  `Bem-vindo`, nessa ordem
 
 #### Scenario: Com Project aberto
 - **WHEN** um Project já foi aberto na sessão e o usuário abre a paleta
-- **THEN** a lista mostra `Abrir projeto (.dpr)`, `Abrir recente` e
-  `Selecionar Unit`, nessa ordem
+- **THEN** a lista mostra `Abrir projeto (.dpr)`, `Abrir recente`,
+  `Selecionar Unit` e `Bem-vindo`, nessa ordem
 
 #### Scenario: Selecionar Unit aparece após abrir um Project pela própria paleta
 - **WHEN** o usuário abre um Project pelo Command `Abrir projeto (.dpr)` e
@@ -173,11 +126,14 @@ paleta para o modo correspondente sem fechá-la.
   usuário cancelar o diálogo nativo, nenhum Project é carregado, o estado do
   app permanece como estava e a paleta NÃO SHALL reaparecer.
 - `Selecionar Unit` SHALL trocar a paleta para o modo `Selecionar Unit` (ver
-  requirement "Modo `Selecionar Unit` dentro da Command Palette"), populado
+  requirement "Modo `Selecionar Unit` na Command Palette"), populado
   com as Project Units e o `projectDir` do último Project carregado, sem
   fechar a paleta.
 - `Abrir recente` SHALL trocar o conteúdo da paleta para a lista de Recent
   Projects (modo `Abrir recente`), sem fechar a paleta.
+- `Bem-vindo` SHALL seguir o mesmo fluxo do item `Ajuda > Bem-vindo`:
+  ativar a Welcome Tab, abrindo-a antes se ela tiver sido fechada
+  (capability `tabs`).
 
 #### Scenario: Executar "Abrir projeto (.dpr)" pela paleta
 - **WHEN** o usuário escolhe `Abrir projeto (.dpr)` na paleta e seleciona um
@@ -202,22 +158,77 @@ paleta para o modo correspondente sem fechá-la.
 - **THEN** a paleta continua aberta e passa a exibir o modo `Abrir recente`,
   com o prefixo fixo `Abrir recente` e a lista de Recent Projects
 
-### Requirement: Modo "Abrir recente" dentro da Command Palette
+#### Scenario: Executar "Bem-vindo" pela paleta
+- **WHEN** a Welcome Tab foi fechada, a Graph Tab `UnitA` está ativa e o
+  usuário escolhe `Bem-vindo` na paleta
+- **THEN** a paleta é fechada e a Welcome Tab é aberta no fim da barra e
+  fica ativa
+
+### Requirement: Modo "Selecionar Unit" na Command Palette
+A Command Palette SHALL ter um terceiro modo, `Selecionar Unit`, cuja
+aparência, filtro e navegação por teclado são os definidos na capability
+`root-unit-selection`. A paleta SHALL entrar nesse modo:
+
+- **automaticamente**, logo após um Project ser carregado
+  (`app:project-loaded`);
+- **ao executar o Command `Selecionar Unit`** estando a paleta aberta na
+  lista de Commands;
+- **ao acionar o item `Edição > Selecionar Unit`** (capability
+  `application-menu`), mesmo que a paleta esteja fechada ou aberta em outro
+  modo.
+
+O modo `Selecionar Unit` SHALL ser sempre fechável sem escolher nada. `Esc`
+SHALL voltar à lista de Commands (com o input vazio) quando a paleta chegou
+a esse modo pelo Command `Selecionar Unit`, e SHALL fechar a paleta inteira
+nas outras duas entradas. O clique fora do card, nas três entradas, SHALL
+fechar a paleta inteira, sem voltar à lista de Commands.
+
+Escolher uma Project Unit nesse modo SHALL fechar a paleta e exibir o
+grafo dessa Root Unit numa Graph Tab, como definido na capability
+`root-unit-selection`.
+
+#### Scenario: Modo Selecionar Unit exibido ao carregar um Project
+- **WHEN** o usuário abre um `.dpr`
+- **THEN** a Command Palette é exibida automaticamente no modo `Selecionar
+  Unit`
+
+#### Scenario: Esc fecha a paleta na abertura automática
+- **WHEN** a paleta está no modo `Selecionar Unit` exibido automaticamente
+  ao carregar um Project e o usuário pressiona `Esc` ou clica fora do card
+- **THEN** a paleta fecha, sem nenhuma Root Unit escolhida
+
+#### Scenario: Esc volta à lista de Commands quando aberto pelo Command
+- **WHEN** a paleta está aberta, o usuário executa o Command `Selecionar
+  Unit` e pressiona `Esc`
+- **THEN** a paleta exibe a lista de Commands, com o input vazio
+
+#### Scenario: Clique fora fecha tudo quando aberto pelo Command
+- **WHEN** nas mesmas condições do cenário anterior, o usuário clica fora
+  do card em vez de pressionar `Esc`
+- **THEN** a paleta fecha inteiramente, sem voltar à lista de Commands
+
+#### Scenario: Esc fecha tudo quando aberto pelo menu Edição
+- **WHEN** o usuário aciona `Edição > Selecionar Unit` com um Project
+  carregado, e pressiona `Esc`
+- **THEN** a paleta fecha inteiramente
+
+#### Scenario: Escolher uma Project Unit no modo Selecionar Unit
+- **WHEN** o usuário escolhe `UnitB` no modo `Selecionar Unit`
+- **THEN** a paleta fecha e o grafo de `UnitB` é exibido na Graph Tab
+  `UnitB`, que fica ativa
+
+### Requirement: Modo "Abrir recente" na Command Palette
 A Command Palette SHALL ter um segundo modo, `Abrir recente`, cuja aparência,
 filtro e navegação são os definidos na capability `recent-projects`. A
 paleta SHALL entrar nesse modo ao executar o Command `Abrir recente` ou
 quando o usuário aciona o item `Arquivo > Abrir recente` ou a sequência
-`Cmd/Ctrl+K R`, mesmo que a paleta esteja fechada ou aberta no modo lista de
-Commands.
+`Cmd/Ctrl+K R`, mesmo que a paleta esteja fechada ou aberta em qualquer
+outro modo.
 
 `Esc` no modo `Abrir recente` SHALL voltar à lista de Commands (com o input
 vazio) quando a paleta chegou a esse modo pelo Command `Abrir recente`, e
 SHALL fechar a paleta quando chegou por `Arquivo > Abrir recente` ou pela
 sequência `Cmd/Ctrl+K R`.
-
-Enquanto a paleta estiver no modo `Selecionar Unit` (capability
-`root-unit-selection`) marcado não-fechável, a sequência `Cmd/Ctrl+K R`
-SHALL não ter efeito algum: a paleta permanece no modo `Selecionar Unit`.
 
 #### Scenario: Esc volta à lista de Commands
 - **WHEN** o usuário abre a paleta com `Cmd/Ctrl+P`, escolhe `Abrir recente`
@@ -240,73 +251,52 @@ SHALL não ter efeito algum: a paleta permanece no modo `Selecionar Unit`.
 - **THEN** a paleta é fechada, `A.dpr` é aberto como descrito na capability
   `recent-projects` e a tela de seleção de Root Unit é exibida
 
-#### Scenario: Cmd/Ctrl+K R não tem efeito no modo Selecionar Unit obrigatório
-- **WHEN** a paleta está aberta no modo `Selecionar Unit` obrigatório e o
-  usuário aciona `Cmd/Ctrl+K R`
-- **THEN** nada acontece: a paleta permanece no modo `Selecionar Unit`
+#### Scenario: Cmd/Ctrl+K R logo após carregar um Project
+- **WHEN** a paleta está aberta no modo `Selecionar Unit` exibido
+  automaticamente ao carregar um Project, e o usuário aciona
+  `Cmd/Ctrl+K R`
+- **THEN** a paleta passa a exibir o modo `Abrir recente`
 
-### Requirement: Modo "Selecionar Unit" dentro da Command Palette
-A Command Palette SHALL ter um terceiro modo, `Selecionar Unit`, cuja
-aparência, filtro e navegação por teclado são os definidos na capability
-`root-unit-selection`. A paleta SHALL entrar nesse modo:
+### Requirement: Abertura da Command Palette pelo menu ou pelo atalho
+O sistema SHALL abrir a Command Palette, no modo lista de Commands, ao clicar
+no item `Paleta de Comandos` do menu `Ferramentas` ou ao pressionar `Cmd+P`
+(macOS) / `Ctrl+P` (Linux), com a janela em foco e a partir de qualquer Tab
+do app. A paleta SHALL abrir mesmo que nenhum Project tenha sido aberto na
+sessão.
 
-- **automaticamente**, logo após um Project ser carregado
-  (`app:project-loaded`), antes de qualquer Root Unit ter sido escolhida
-  para esse Project nesta sessão — nesse caso o modo SHALL ser marcado
-  não-fechável;
-- **ao executar o Command `Selecionar Unit`** estando a paleta aberta na
-  lista de Commands — nesse caso o modo SHALL ser fechável;
-- **ao acionar o item `Edição > Selecionar Unit`** (capability
-  `application-menu`), mesmo que a paleta esteja fechada ou aberta em outro
-  modo — nesse caso o modo SHALL ser fechável.
+Se a paleta já estiver aberta, acionar o atalho ou o item de menu SHALL
+devolver o foco ao input no modo lista de Commands, sem abrir uma segunda
+instância: se ela estava no modo `Abrir recente` ou `Selecionar Unit`,
+volta à lista de Commands.
 
-Um modo `Selecionar Unit` não-fechável SHALL ignorar `Esc`, o clique fora do
-card e os atalhos que trocariam de modo (`Cmd/Ctrl+P`, `Cmd/Ctrl+K R`):
-nenhum deles SHALL ter efeito algum enquanto o modo permanecer não-fechável.
-Ele deixa de ser não-fechável assim que uma Root Unit é escolhida nesse modo
-para o Project atual.
+#### Scenario: Abrir pelo menu
+- **WHEN** o usuário clica em `Ferramentas > Paleta de Comandos`
+- **THEN** a Command Palette é exibida no modo lista de Commands
 
-Num modo `Selecionar Unit` fechável, `Esc` SHALL voltar à lista de Commands
-(com o input vazio) quando a paleta chegou a esse modo pelo Command
-`Selecionar Unit`, e SHALL fechar a paleta inteira quando chegou por
-`Edição > Selecionar Unit`. O clique fora do card, em ambos os casos, SHALL
-fechar a paleta inteira, sem voltar à lista de Commands.
+#### Scenario: Abrir pelo atalho
+- **WHEN** o usuário pressiona `Cmd+P` (macOS) ou `Ctrl+P` (Linux)
+- **THEN** a Command Palette é exibida no modo lista de Commands
 
-Escolher uma Project Unit nesse modo SHALL fechar a paleta e exibir o
-grafo dessa Root Unit, como definido na capability `root-unit-selection`.
+#### Scenario: Paleta abre sem Project carregado
+- **WHEN** o usuário aciona a paleta antes de abrir qualquer Project na
+  sessão
+- **THEN** a paleta é exibida normalmente
 
-#### Scenario: Modo Selecionar Unit obrigatório ao carregar um Project
-- **WHEN** o usuário abre um `.dpr` e nenhuma Root Unit foi escolhida ainda
-  nesta sessão para esse Project
-- **THEN** a Command Palette é exibida automaticamente no modo `Selecionar
-  Unit`, marcada não-fechável
+#### Scenario: Paleta já aberta
+- **WHEN** a paleta já está aberta no modo lista de Commands e o usuário
+  aciona o atalho ou o item de menu de novo
+- **THEN** o foco volta ao input e continua existindo uma única instância da
+  paleta
 
-#### Scenario: Esc e clique fora não têm efeito no modo obrigatório
-- **WHEN** a paleta está no modo `Selecionar Unit` obrigatório e o usuário
-  pressiona `Esc` ou clica fora do card
-- **THEN** nada acontece e a paleta permanece no modo `Selecionar Unit`
+#### Scenario: Atalho da paleta com a paleta no modo recentes
+- **WHEN** a paleta está aberta no modo `Abrir recente` e o usuário aciona
+  `Cmd/Ctrl+P`
+- **THEN** a paleta passa a exibir a lista de Commands, com o input vazio e
+  o foco nele
 
-#### Scenario: Modo deixa de ser obrigatório após a primeira escolha
-- **WHEN** o usuário escolhe uma Project Unit no modo `Selecionar Unit`
-  obrigatório
-- **THEN** o grafo é exibido e, a partir daí, qualquer nova entrada no modo
-  `Selecionar Unit` para esse Project é fechável
-
-#### Scenario: Esc volta à lista de Commands quando aberto pelo Command
-- **WHEN** a paleta está aberta, o usuário executa o Command `Selecionar
-  Unit` e pressiona `Esc`
-- **THEN** a paleta exibe a lista de Commands, com o input vazio
-
-#### Scenario: Clique fora fecha tudo quando aberto pelo Command
-- **WHEN** nas mesmas condições do cenário anterior, o usuário clica fora
-  do card em vez de pressionar `Esc`
-- **THEN** a paleta fecha inteiramente, sem voltar à lista de Commands
-
-#### Scenario: Esc fecha tudo quando aberto pelo menu Edição
-- **WHEN** o usuário aciona `Edição > Selecionar Unit` com um grafo já
-  renderizado, e pressiona `Esc`
-- **THEN** a paleta fecha inteiramente
-
-#### Scenario: Escolher uma Project Unit no modo Selecionar Unit
-- **WHEN** o usuário escolhe `UnitB` no modo `Selecionar Unit`
-- **THEN** a paleta fecha e o grafo de `UnitB` é exibido
+#### Scenario: Atalho da paleta logo após carregar um Project
+- **WHEN** a paleta está aberta no modo `Selecionar Unit` exibido
+  automaticamente ao carregar um Project, e o usuário pressiona
+  `Cmd/Ctrl+P`
+- **THEN** a paleta passa a exibir a lista de Commands, com o input vazio e
+  o foco nele
