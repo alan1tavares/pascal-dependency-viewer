@@ -16,7 +16,8 @@ test('rola a Welcome até os atalhos quando a janela é baixa', async ({ page })
     scrollHeight: el.scrollHeight,
     clientHeight: el.clientHeight,
   }))
-  expect(clientHeight).toBe(500)
+  const tabBarHeight = await page.locator('.tab-bar').evaluate((el) => el.getBoundingClientRect().height)
+  expect(clientHeight).toBe(500 - tabBarHeight)
   expect(scrollHeight).toBeGreaterThan(clientHeight)
 
   const lastShortcut = page.locator('.keyboard-shortcuts li').last()

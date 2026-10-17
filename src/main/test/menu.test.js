@@ -77,6 +77,7 @@ test('monta o menu "Ferramentas" entre "Edição" e o viewMenu, com apenas "Pale
     'Edição',
     'Ferramentas',
     'viewMenu',
+    'Ajuda',
   ]);
   const ferramentasMenu = template[2];
   expect(ferramentasMenu.submenu.map((item) => item.label)).toEqual(['Paleta de Comandos']);
@@ -150,4 +151,22 @@ test('"Selecionar Método" exibe um alerta e não mexe no renderer', () => {
     expect.objectContaining({ message: expect.stringContaining('Selecionar Método') }),
   );
   expect(mainWindow.webContents.send).not.toHaveBeenCalled();
+});
+
+test('monta o menu "Ajuda" depois do viewMenu, com apenas "Bem-vindo", sem atalho', () => {
+  const { template } = buildTestMenu();
+
+  const ajudaMenu = template[4];
+  expect(ajudaMenu.label).toBe('Ajuda');
+  expect(ajudaMenu.submenu.map((item) => item.label)).toEqual(['Bem-vindo']);
+  expect(ajudaMenu.submenu[0].accelerator).toBeUndefined();
+});
+
+test('"Bem-vindo" envia app:show-welcome sem payload e sem abrir diálogo nativo', () => {
+  const { template, mainWindow, performOpenProject } = buildTestMenu();
+
+  template[4].submenu[0].click();
+
+  expect(mainWindow.webContents.send).toHaveBeenCalledWith('app:show-welcome');
+  expect(performOpenProject).not.toHaveBeenCalled();
 });

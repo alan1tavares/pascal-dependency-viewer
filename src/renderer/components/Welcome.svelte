@@ -1,6 +1,5 @@
 <script>
   import { projectStore } from '../stores/project.js';
-  import { graphRenderedStore } from '../stores/graph.js';
   import { runCommand } from '../services/ipc.js';
 
   async function openProject() {
@@ -8,7 +7,6 @@
   }
 </script>
 
-{#if !$graphRenderedStore}
 <div class="welcome">
   <div class="header">
     <h1>Pascal Dependency Viewer</h1>
@@ -57,7 +55,6 @@
     </div>
   {/if}
 </div>
-{/if}
 
 <style>
   .welcome {

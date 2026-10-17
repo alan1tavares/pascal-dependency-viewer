@@ -36,11 +36,20 @@ vi.mock('vis-data', () => ({
   }),
 }));
 
+const testGraph = {
+  nodes: [
+    { id: 'unit1', label: 'Unit1', group: 'projectUnit' },
+    { id: 'unit2', label: 'Unit2', group: 'externalUnit' },
+  ],
+  edges: [{ from: 'unit1', to: 'unit2', origin: 'interface' }],
+  rootUnitId: 'unit1',
+};
+
 describe('GraphView.svelte', () => {
   let component;
 
   beforeEach(() => {
-    component = render(GraphView);
+    component = render(GraphView, { props: { graph: testGraph } });
   });
 
   afterEach(() => {
@@ -51,15 +60,14 @@ describe('GraphView.svelte', () => {
     expect(component).toBeDefined();
   });
 
-  it('renderiza container com id mynetwork', () => {
-    const container = document.getElementById('mynetwork');
-    expect(container).toBeDefined();
+  it('renderiza o container do grafo', () => {
+    expect(document.querySelector('.network-container')).not.toBeNull();
   });
 
   it('renderiza checkboxes de filtro', () => {
-    const interfaceCheckbox = document.getElementById('viewFilterInterface');
-    const implementationCheckbox = document.getElementById('viewFilterImplementation');
-    const externalCheckbox = document.getElementById('viewFilterExternal');
+    const interfaceCheckbox = document.querySelector('.viewFilterInterface');
+    const implementationCheckbox = document.querySelector('.viewFilterImplementation');
+    const externalCheckbox = document.querySelector('.viewFilterExternal');
 
     expect(interfaceCheckbox).toBeDefined();
     expect(implementationCheckbox).toBeDefined();
@@ -67,35 +75,22 @@ describe('GraphView.svelte', () => {
   });
 
   it('inicializa filtros com valores corretos', () => {
-    const interfaceCheckbox = document.getElementById('viewFilterInterface');
-    const implementationCheckbox = document.getElementById('viewFilterImplementation');
-    const externalCheckbox = document.getElementById('viewFilterExternal');
+    const interfaceCheckbox = document.querySelector('.viewFilterInterface');
+    const implementationCheckbox = document.querySelector('.viewFilterImplementation');
+    const externalCheckbox = document.querySelector('.viewFilterExternal');
 
     expect(interfaceCheckbox.checked).toBe(true);
     expect(implementationCheckbox.checked).toBe(true);
     expect(externalCheckbox.checked).toBe(false);
   });
 
-  it('renderiza grafo quando renderGraph é chamado', async () => {
-    const testNodes = [
-      { id: 'unit1', label: 'Unit1', group: 'projectUnit' },
-      { id: 'unit2', label: 'Unit2', group: 'externalUnit' },
-    ];
-    const testEdges = [
-      { from: 'unit1', to: 'unit2', origin: 'interface' },
-    ];
-
-    component.renderGraph(testNodes, testEdges, 'unit1');
-
-    await new Promise(resolve => setTimeout(resolve, 10));
-
-    const container = document.getElementById('mynetwork');
-    expect(container.style.display).toBe('block');
+  it('renderiza na montagem o grafo recebido por prop', () => {
+    expect(document.querySelector('.network-container canvas')).not.toBeNull();
   });
 
   it('valida que pelo menos um filtro de uses clause deve estar marcado', () => {
-    const interfaceCheckbox = document.getElementById('viewFilterInterface');
-    const implementationCheckbox = document.getElementById('viewFilterImplementation');
+    const interfaceCheckbox = document.querySelector('.viewFilterInterface');
+    const implementationCheckbox = document.querySelector('.viewFilterImplementation');
 
     // Tenta desmarcar ambos - o último deve reverterpara marcado
     interfaceCheckbox.checked = false;

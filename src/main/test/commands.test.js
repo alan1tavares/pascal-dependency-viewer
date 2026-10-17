@@ -44,6 +44,15 @@ test('openRecent envia app:show-open-recent sem payload e sem abrir diálogo nat
   expect(performOpenProject).not.toHaveBeenCalled();
 });
 
+test('showWelcome envia app:show-welcome sem payload e sem abrir diálogo nativo', async () => {
+  const { webContents, performOpenProject } = setup();
+
+  await runCommand('showWelcome', { webContents, performOpenProject });
+
+  expect(webContents.send).toHaveBeenCalledWith('app:show-welcome');
+  expect(performOpenProject).not.toHaveBeenCalled();
+});
+
 test('id desconhecido é ignorado', async () => {
   const { webContents, performOpenProject } = setup();
 

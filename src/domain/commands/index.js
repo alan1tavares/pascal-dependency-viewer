@@ -14,6 +14,10 @@ export const COMMANDS = [
     label: 'Selecionar Unit',
     requiresProject: true,
   },
+  {
+    id: 'showWelcome',
+    label: 'Bem-vindo',
+  },
 ];
 
 export function availableCommands(commands, { hasProject }) {

@@ -10,7 +10,6 @@
     filterRecentProjects,
   } from "../../domain/recentProjects/index.js";
   import { filterProjectUnits } from "../../domain/rootUnitSelection/index.js";
-  import { markGraphRendered } from "../stores/graph.js";
 
   const api = window.pascalDependencyViewer;
   const isMac = api.platform === "darwin";
@@ -31,7 +30,6 @@
   let isOpen = $state(false);
   let mode = $state(COMMANDS_MODE);
   let modeEntry = $state("palette");
-  let closable = $state(true);
   let recentPaths = $state([]);
   let rootUnits = $state([]);
   let rootUnitProjectDir = $state(null);
@@ -41,7 +39,6 @@
 
   let inputEl = $state();
   let overlayEl = $state();
-  let graphViewComponent = $state();
 
   let placeholderText = $derived(
     mode === COMMANDS_MODE
@@ -67,12 +64,14 @@
     hasProject = options.hasProject;
     getProject = options.getProject;
     onRootUnitSelected = options.onRootUnitSelected;
-    graphViewComponent = options.graphViewComponent;
+  }
+
+  export function isPaletteOpen() {
+    return isOpen;
   }
 
   function closeCommandPalette() {
     isOpen = false;
-    closable = true;
     document.body.style.overflow = '';
   }
 
@@ -81,20 +80,9 @@
     api.openRecentProject(filePath);
   }
 
-  async function selectRootUnit(projectUnit) {
-    const simplifiedUnits = rootUnits.map(unit => ({
-      path: unit.path,
-      unitName: unit.unitName,
-    }));
-    const graph = await api.expandFromRootUnit({
-      projectDir: rootUnitProjectDir,
-      projectUnit: { path: projectUnit.path, unitName: projectUnit.unitName },
-      projectUnits: simplifiedUnits,
-    });
-    graphViewComponent.renderGraph(graph.nodes, graph.edges, graph.rootUnitId);
-    markGraphRendered();
-    onRootUnitSelected?.();
+  function selectRootUnit(projectUnit) {
     closeCommandPalette();
+    onRootUnitSelected?.(projectUnit);
   }
 
   function executeCommand(command) {
@@ -106,7 +94,6 @@
       const project = getProject();
       enterRootUnitMode(project.projectUnits, project.projectDir, {
         entry: "palette",
-        closable: true,
       });
       return;
     }
@@ -135,7 +122,6 @@
 
   function enterCommandsMode() {
     mode = COMMANDS_MODE;
-    closable = true;
     resetInput();
     document.body.style.overflow = 'hidden';
   }
@@ -143,7 +129,6 @@
   async function enterRecentsMode(entry) {
     mode = RECENTS_MODE;
     modeEntry = entry;
-    closable = true;
     isOpen = true;
     document.body.style.overflow = 'hidden';
     filteredItems = [];
@@ -157,11 +142,10 @@
   export function enterRootUnitMode(
     projectUnits,
     projectDir,
-    { entry, closable: isClosable } = {},
+    { entry } = {},
   ) {
     mode = ROOT_UNIT_MODE;
     modeEntry = entry;
-    closable = Boolean(isClosable);
     rootUnits = projectUnits;
     rootUnitProjectDir = projectDir;
     isOpen = true;
@@ -185,7 +169,6 @@
   }
 
   function leaveOnEscape() {
-    if (!closable) return;
     if (mode !== COMMANDS_MODE && modeEntry === "palette") enterCommandsMode();
     else closeCommandPalette();
   }
@@ -207,12 +190,10 @@
   }
 
   function handleOverlayMousedown(event) {
-    if (!closable) return;
     if (event.target === overlayEl) closeCommandPalette();
   }
 
   export function showCommandPalette() {
-    if (!closable) return;
     if (isOpen && mode === COMMANDS_MODE) {
       return;
     }
@@ -221,7 +202,6 @@
   }
 
   export function showOpenRecent() {
-    if (!closable) return;
     if (isOpen && mode === RECENTS_MODE) {
       if (inputEl) inputEl.focus();
       return;

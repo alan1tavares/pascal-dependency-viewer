@@ -29,3 +29,7 @@ export function showOpenRecent() {
 export function enterRootUnitMode(projectUnits, projectDir, options) {
   getApp().enterRootUnitMode(projectUnits, projectDir, options);
 }
+
+export function isCommandPaletteOpen() {
+  return app ? app.isPaletteOpen() : false;
+}
