@@ -111,6 +111,7 @@ test('os rótulos de "Arquivo" e "Edição" batem com os do catálogo de Command
   expect(template[0].submenu[0].label).toBe(catalogLabel('openProject'));
   expect(template[0].submenu[1].label).toBe(`${catalogLabel('openRecent')}  Ctrl+K R`);
   expect(template[1].submenu[0].label).toBe(catalogLabel('selectUnit'));
+  expect(template[1].submenu[1].label).toBe(catalogLabel('selectMethod'));
 });
 
 test('"Abrir projeto (.dpr)" reaproveita performOpenProject e envia app:project-loaded', async () => {
@@ -141,16 +142,21 @@ test('"Selecionar Unit" envia app:show-root-unit-selection sem payload', () => {
   expect(mainWindow.webContents.send).toHaveBeenCalledWith('app:show-root-unit-selection');
 });
 
-test('"Selecionar Método" exibe um alerta e não mexe no renderer', () => {
+test('"Selecionar Método" envia app:show-method-selection sem payload e sem diálogo nativo', () => {
   const { template, mainWindow } = buildTestMenu();
 
   template[1].submenu[1].click();
 
-  expect(showMessageBox).toHaveBeenCalledWith(
-    mainWindow,
-    expect.objectContaining({ message: expect.stringContaining('Selecionar Método') }),
-  );
-  expect(mainWindow.webContents.send).not.toHaveBeenCalled();
+  expect(mainWindow.webContents.send).toHaveBeenCalledWith('app:show-method-selection');
+  expect(showMessageBox).not.toHaveBeenCalled();
+});
+
+test('"Selecionar Método" começa desabilitado, sem atalho, com id e rótulo do catálogo', () => {
+  const { template } = buildTestMenu();
+  const item = template[1].submenu[1];
+
+  expect(item).toMatchObject({ id: 'selectMethod', label: 'Selecionar Método', enabled: false });
+  expect(item.accelerator).toBeUndefined();
 });
 
 test('monta o menu "Ajuda" depois do viewMenu, com apenas "Bem-vindo", sem atalho', () => {

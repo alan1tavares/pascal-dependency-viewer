@@ -77,7 +77,8 @@ em vez de `invoke` porque não há resposta.
 renderer, como `selectUnit` faz com `app:show-root-unit-selection`. O
 renderer resolve a Root Unit da Unit Tab ativa a partir da própria store de
 Tabs (o main não sabe qual é), e abre o modo com `entry: 'direct'`. Pela
-paleta, o Command troca de modo localmente com `entry: 'command'`, sem IPC.
+paleta, o Command troca de modo localmente com `entry: 'palette'` (o mesmo
+valor que `Abrir recente` e `Selecionar Unit` já usavam), sem IPC.
 Se o push chegar sem Unit Tab ativa (corrida com troca de Tab), é ignorado.
 
 ### 4. Modo `Selecionar Método` com estado de carregamento
@@ -106,7 +107,8 @@ começa com `unit:`; e o id do Method já inclui a Unit, então rótulos iguais
 em Units diferentes geram Tabs distintas. `openMethodTab(state, tab)`
 reutiliza `openTab`. `closeUnitTabs` é generalizado para `closeProjectTabs`
 (fecha `unit` e `method`), usado em `app:project-loaded`. A Tab guarda
-`{ methodId, label, unitName, unitPath, graph }`; o título é `label` e o
+`{ methodId, title, unitName, unitPath, graph }`, com `title` = `label` do
+Method (o mesmo campo de título da Unit Tab); o título é `title` e o
 tooltip é `${unitName} — ${unitPath}` (`unitPath` vem das Project Units já
 presentes na store de Project).
 
@@ -129,14 +131,20 @@ Opções `vis-network`:
   `isTarget` → `target`; `kind !== 'method'` → `block` (box, mesma cor de
   `entryPoint`); `isEntryPoint` → `entryPoint` (ellipse); senão `method`
   (neutro).
-- Arestas: `isBackEdge` → `dashes: true`; self-loop nativo do vis
-  (`from === to`, `selfReference`); `isPolymorphic` → `color` própria e
+- Arestas: `isBackEdge` → `dashes: true` e curvatura própria
+  (`smooth: curvedCW`) — uma back-edge costuma ter a aresta do sentido
+  oposto entre os mesmos nós (`A → B` e `B → A`), e, reta, ficaria
+  escondida sob ela; self-loop nativo do vis (`from === to`,
+  `selfReference`); `isPolymorphic` → `color` própria e
   `title: 'via ' + viaLabel`.
 - Rótulo do nó: `label` do contrato; para `kind: 'method'`, `label` + `\n`
   + `unitName`. Blocos usam só o `label` (`Programa`, `UnitX (initialization)`).
 
-Cores exatas ficam no componente; os testes verificam grupo/estilo
-atribuído, não valores hex.
+Cores (em `services/callerGraphRenderer.js`): `target` laranja-avermelhado
+com borda grossa e texto branco; `entryPoint` âmbar; `block` com o mesmo
+âmbar, formato `box` e borda tracejada; `method` azul-acinzentado neutro;
+Polymorphic Calls em roxo. Os testes verificam grupo/estilo atribuído, não
+valores hex.
 
 ### 7. Aviso de Units não analisadas
 Faixa simples no topo da Method Tab, acima do canvas, renderizada só se
@@ -164,5 +172,5 @@ alerta.
 
 ## Open Questions
 
-- Paleta de cores final dos grupos (`target`, `entryPoint`, `method`,
-  Polymorphic Call) — pode ser decidida na implementação sem afetar specs.
+Nenhuma. (A paleta de cores dos grupos foi decidida na implementação; ver
+decisão 6.)

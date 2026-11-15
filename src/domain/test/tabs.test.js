@@ -2,12 +2,14 @@ import {
   WELCOME_TAB_ID,
   activateTab,
   canCloseTab,
-  closeUnitTabs,
+  closeProjectTabs,
   closeTab,
   unitTabId,
   initialTabsState,
   nextTab,
   openUnitTab,
+  openMethodTab,
+  methodTabId,
   openWelcomeTab,
   previousTab,
 } from '../tabs/index.js';
@@ -89,15 +91,15 @@ test('openWelcomeTab com a Welcome Tab aberta só a ativa', () => {
   expect(state.activeId).toBe(WELCOME_TAB_ID);
 });
 
-test('closeUnitTabs mantém a Welcome Tab aberta e a ativa', () => {
-  const state = closeUnitTabs(withTabs('UnitA', 'UnitB'));
+test('closeProjectTabs mantém a Welcome Tab aberta e a ativa', () => {
+  const state = closeProjectTabs(withTabs('UnitA', 'UnitB'));
   expect(ids(state)).toEqual([WELCOME_TAB_ID]);
   expect(state.activeId).toBe(WELCOME_TAB_ID);
   expect(state.activationOrder).toEqual([WELCOME_TAB_ID]);
 });
 
-test('closeUnitTabs com a Welcome Tab fechada a reabre e a ativa', () => {
-  const state = closeUnitTabs(closeTab(withTabs('UnitA'), WELCOME_TAB_ID));
+test('closeProjectTabs com a Welcome Tab fechada a reabre e a ativa', () => {
+  const state = closeProjectTabs(closeTab(withTabs('UnitA'), WELCOME_TAB_ID));
   expect(ids(state)).toEqual([WELCOME_TAB_ID]);
   expect(state.activeId).toBe(WELCOME_TAB_ID);
 });
@@ -122,4 +124,52 @@ test('unitTabId usa o mesmo id que expandDependencyGraph dá à Root Unit', () =
   const projectUnits = [{ unitName: 'UnitPrincipal', path: 'UnitPrincipal.pas' }];
   const { rootUnitId } = expandDependencyGraph('UnitPrincipal', projectUnits, () => 'unit UnitPrincipal;\ninterface\nimplementation\nend.');
   expect(unitTabId('UnitPrincipal')).toBe(`unit:${rootUnitId}`);
+});
+
+describe('Method Tab', () => {
+  const methodTab = (methodId, label) => ({ id: methodTabId(methodId), title: label, methodId });
+  const SALVAR = 'unit:unitcliente|tcliente|salvar';
+
+  test('methodTabId não colide com unitTabId', () => {
+    expect(methodTabId(SALVAR)).toBe(`method:${SALVAR}`);
+    expect(methodTabId('unit:unita||x')).not.toBe(unitTabId('unita'));
+    expect(methodTabId(SALVAR).startsWith('unit:')).toBe(false);
+  });
+
+  test('escolher um Method abre a Method Tab no fim da barra, ativa, mantendo a Unit Tab', () => {
+    const state = openMethodTab(withTabs('UnitCliente'), methodTab(SALVAR, 'TCliente.Salvar'));
+    expect(ids(state)).toEqual([WELCOME_TAB_ID, 'unit:unitcliente', methodTabId(SALVAR)]);
+    expect(state.activeId).toBe(methodTabId(SALVAR));
+    expect(state.tabs[2]).toMatchObject({ kind: 'method', title: 'TCliente.Salvar' });
+  });
+
+  test('Method que já tem Method Tab só é ativado, sem duplicar nem mudar de posição', () => {
+    let state = openMethodTab(withTabs('UnitCliente'), methodTab(SALVAR, 'TCliente.Salvar'));
+    state = activateTab(state, 'unit:unitcliente');
+    state = openMethodTab(state, methodTab(SALVAR, 'TCliente.Salvar'));
+    expect(ids(state)).toEqual([WELCOME_TAB_ID, 'unit:unitcliente', methodTabId(SALVAR)]);
+    expect(state.activeId).toBe(methodTabId(SALVAR));
+  });
+
+  test('mesmo rótulo em Units diferentes gera Method Tabs distintas', () => {
+    let state = openMethodTab(withTabs('UnitA', 'UnitB'), methodTab('unit:unita||inicializar', 'Inicializar'));
+    state = openMethodTab(state, methodTab('unit:unitb||inicializar', 'Inicializar'));
+    const methodTabs = state.tabs.filter((tab) => tab.kind === 'method');
+    expect(methodTabs.map((tab) => tab.title)).toEqual(['Inicializar', 'Inicializar']);
+    expect(new Set(methodTabs.map((tab) => tab.id)).size).toBe(2);
+  });
+
+  test('fechar a Unit Tab de origem não fecha a Method Tab', () => {
+    let state = openMethodTab(withTabs('UnitCliente'), methodTab(SALVAR, 'TCliente.Salvar'));
+    state = closeTab(state, 'unit:unitcliente');
+    expect(ids(state)).toEqual([WELCOME_TAB_ID, methodTabId(SALVAR)]);
+    expect(state.tabs[1]).toMatchObject({ kind: 'method', methodId: SALVAR });
+  });
+
+  test('abrir um Project fecha Unit Tabs e Method Tabs e ativa a Welcome Tab', () => {
+    let state = openMethodTab(withTabs('UnitCliente'), methodTab(SALVAR, 'TCliente.Salvar'));
+    state = closeProjectTabs(closeTab(state, WELCOME_TAB_ID));
+    expect(ids(state)).toEqual([WELCOME_TAB_ID]);
+    expect(state.activeId).toBe(WELCOME_TAB_ID);
+  });
 });

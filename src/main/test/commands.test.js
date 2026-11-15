@@ -26,6 +26,15 @@ test('openProject não envia nada quando o diálogo nativo é cancelado', async 
   expect(webContents.send).not.toHaveBeenCalled();
 });
 
+test('selectMethod envia app:show-method-selection sem payload', async () => {
+  const { webContents, performOpenProject } = setup();
+
+  await runCommand('selectMethod', { webContents, performOpenProject });
+
+  expect(webContents.send).toHaveBeenCalledWith('app:show-method-selection');
+  expect(performOpenProject).not.toHaveBeenCalled();
+});
+
 test('selectUnit envia app:show-root-unit-selection sem payload', async () => {
   const { webContents, performOpenProject } = setup();
 

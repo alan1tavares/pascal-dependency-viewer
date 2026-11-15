@@ -6,6 +6,12 @@ export function unitTabId(unitName) {
   return `unit:${unitName.toLowerCase()}`;
 }
 
+// O id do Method (`unit:<unit>|<classe>|<nome>`) também começa com `unit:`;
+// o prefixo próprio evita colisão com o id de uma Unit Tab.
+export function methodTabId(methodId) {
+  return `method:${methodId}`;
+}
+
 export function initialTabsState() {
   return {
     tabs: [WELCOME_TAB],
@@ -38,6 +44,10 @@ export function openUnitTab(state, tab) {
   return openTab(state, { ...tab, kind: 'unit' });
 }
 
+export function openMethodTab(state, tab) {
+  return openTab(state, { ...tab, kind: 'method' });
+}
+
 export function canCloseTab(state, id) {
   return !(state.tabs.length === 1 && state.tabs[0].id === WELCOME_TAB_ID && id === WELCOME_TAB_ID);
 }
@@ -53,8 +63,9 @@ export function closeTab(state, id) {
   return { tabs, activeId, activationOrder };
 }
 
-export function closeUnitTabs(state) {
-  const tabs = state.tabs.filter((tab) => tab.kind !== 'unit');
+// Abrir um Project fecha todas as Tabs dele (Unit Tabs e Method Tabs).
+export function closeProjectTabs(state) {
+  const tabs = state.tabs.filter((tab) => tab.kind !== 'unit' && tab.kind !== 'method');
   const remaining = new Set(tabs.map((tab) => tab.id));
   const cleared = {
     tabs,

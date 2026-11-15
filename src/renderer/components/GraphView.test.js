@@ -1,16 +1,16 @@
 import { render, screen } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { Network } from 'vis-network';
 import GraphView from './GraphView.svelte';
 
 // Mock vis-network pois requer canvas/DOM construído
 vi.mock('vis-network', () => ({
   Network: vi.fn(function(container, data, options) {
     this.destroy = vi.fn();
-    this.once = vi.fn((event, cb) => {
-      if (event === 'stabilizationIterationsDone') {
-        setTimeout(cb, 0);
-      }
-    });
+    // Como no vis-network real, nada dispara depois de `destroy`; o teste não
+    // depende do fim da estabilização.
+    this.once = vi.fn();
+    this.fit = vi.fn();
     this.setOptions = vi.fn();
   }),
 }));
@@ -85,7 +85,14 @@ describe('GraphView.svelte', () => {
   });
 
   it('renderiza na montagem o grafo recebido por prop', () => {
-    expect(document.querySelector('.network-container canvas')).not.toBeNull();
+    // vis-network é mockado: em vez de procurar o <canvas>, verifica o que foi
+    // entregue a ele.
+    const [container, data] = Network.mock.calls.at(-1);
+    expect(container).toBe(document.querySelector('.network-container'));
+    expect(data.nodes.add).toHaveBeenCalledWith(testGraph.nodes);
+    expect(data.edges.add).toHaveBeenCalledWith([
+      expect.objectContaining({ from: 'unit1', to: 'unit2' }),
+    ]);
   });
 
   it('valida que pelo menos um filtro de uses clause deve estar marcado', () => {
@@ -93,11 +100,12 @@ describe('GraphView.svelte', () => {
     const implementationCheckbox = document.querySelector('.viewFilterImplementation');
 
     // Tenta desmarcar ambos - o último deve reverterpara marcado
+    // `change` borbulha no navegador; o Svelte 5 delega `onchange` à raiz.
     interfaceCheckbox.checked = false;
-    interfaceCheckbox.dispatchEvent(new Event('change'));
+    interfaceCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
 
     implementationCheckbox.checked = false;
-    implementationCheckbox.dispatchEvent(new Event('change'));
+    implementationCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
 
     // Ao menos um deve estar marcado
     const atLeastOneChecked =

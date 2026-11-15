@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, Menu } from "electron";
 import path from "node:path";
 import started from "electron-squirrel-startup";
 
@@ -8,6 +8,7 @@ import { performOpenProject, registerProjectHandler } from "./ipc/project.js";
 import { registerGraphHandler } from "./ipc/graph.js";
 import { registerCommandsHandler } from "./ipc/commands.js";
 import { registerCallGraphHandler } from "./ipc/callGraph.js";
+import { registerActiveTabKindHandler } from "./ipc/tabs.js";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -19,6 +20,7 @@ let mainWindow;
 registerProjectHandler(ipcMain);
 registerGraphHandler(ipcMain);
 registerCallGraphHandler(ipcMain);
+registerActiveTabKindHandler(ipcMain, { getMenu: () => Menu.getApplicationMenu() });
 registerCommandsHandler(ipcMain, { performOpenProject });
 
 const createWindow = () => {

@@ -8,6 +8,9 @@ export async function runCommand(id, { webContents, performOpenProject }) {
     case "selectUnit":
       webContents.send("app:show-root-unit-selection");
       break;
+    case "selectMethod":
+      webContents.send("app:show-method-selection");
+      break;
     case "openRecent":
       webContents.send("app:show-open-recent");
       break;

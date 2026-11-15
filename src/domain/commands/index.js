@@ -1,3 +1,5 @@
+import { matchesSearch } from '../search/index.js';
+
 export const COMMANDS = [
   {
     id: 'openProject',
@@ -15,27 +17,28 @@ export const COMMANDS = [
     requiresProject: true,
   },
   {
+    id: 'selectMethod',
+    label: 'Selecionar Método',
+    requiresActiveTabKind: 'unit',
+  },
+  {
     id: 'showWelcome',
     label: 'Bem-vindo',
   },
 ];
 
-export function availableCommands(commands, { hasProject }) {
-  return commands.filter((command) => hasProject || !command.requiresProject);
-}
-
-function normalizeForSearch(text) {
-  return text
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase();
+// `activeTabKind`: tipo da Tab ativa quando a paleta é aberta
+// (`welcome`, `unit` ou `method`).
+export function availableCommands(commands, { hasProject, activeTabKind }) {
+  return commands.filter(
+    (command) =>
+      (hasProject || !command.requiresProject) &&
+      (!command.requiresActiveTabKind || command.requiresActiveTabKind === activeTabKind),
+  );
 }
 
 export function filterCommands(commands, text) {
-  const needle = normalizeForSearch(text);
-  return commands.filter((command) =>
-    normalizeForSearch(command.label).includes(needle),
-  );
+  return commands.filter((command) => matchesSearch(command.label, text));
 }
 
 export function shortcutHint(command, isMac) {

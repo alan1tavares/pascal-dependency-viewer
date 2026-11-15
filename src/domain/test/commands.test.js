@@ -7,28 +7,48 @@ import {
 
 const labels = (commands) => commands.map((command) => command.label);
 
-test('o catálogo tem Abrir projeto (.dpr), Abrir recente, Selecionar Unit e Bem-vindo, nesta ordem', () => {
+test('o catálogo tem Abrir projeto (.dpr), Abrir recente, Selecionar Unit, Selecionar Método e Bem-vindo, nesta ordem', () => {
   expect(COMMANDS.map((command) => command.id)).toEqual([
     'openProject',
     'openRecent',
     'selectUnit',
+    'selectMethod',
     'showWelcome',
   ]);
   expect(labels(COMMANDS)).toEqual([
     'Abrir projeto (.dpr)',
     'Abrir recente',
     'Selecionar Unit',
+    'Selecionar Método',
     'Bem-vindo',
   ]);
 });
 
-test('Selecionar Método e Sair não são Commands', () => {
-  expect(labels(COMMANDS)).not.toContain('Selecionar Método');
+test('Sair não é Command', () => {
   expect(labels(COMMANDS)).not.toContain('Sair');
 });
 
+test('Selecionar Método não tem atalho', () => {
+  const selectMethod = COMMANDS.find((command) => command.id === 'selectMethod');
+  expect(shortcutHint(selectMethod, true)).toBeUndefined();
+  expect(shortcutHint(selectMethod, false)).toBeUndefined();
+});
+
+test('Selecionar Método só aparece com uma Unit Tab ativa', () => {
+  const withTab = (activeTabKind) => labels(availableCommands(COMMANDS, { hasProject: true, activeTabKind }));
+  expect(withTab('unit')).toEqual([
+    'Abrir projeto (.dpr)',
+    'Abrir recente',
+    'Selecionar Unit',
+    'Selecionar Método',
+    'Bem-vindo',
+  ]);
+  expect(withTab('welcome')).not.toContain('Selecionar Método');
+  expect(withTab('method')).not.toContain('Selecionar Método');
+});
+
 test('omite Selecionar Unit quando nenhum Project foi aberto', () => {
-  expect(labels(availableCommands(COMMANDS, { hasProject: false }))).toEqual([
+  expect(labels(availableCommands(COMMANDS, { hasProject: false, activeTabKind: 'welcome' }))).toEqual([
     'Abrir projeto (.dpr)',
     'Abrir recente',
     'Bem-vindo',
@@ -36,7 +56,7 @@ test('omite Selecionar Unit quando nenhum Project foi aberto', () => {
 });
 
 test('lista os quatro Commands, nesta ordem, quando há Project aberto', () => {
-  expect(labels(availableCommands(COMMANDS, { hasProject: true }))).toEqual([
+  expect(labels(availableCommands(COMMANDS, { hasProject: true, activeTabKind: 'welcome' }))).toEqual([
     'Abrir projeto (.dpr)',
     'Abrir recente',
     'Selecionar Unit',
