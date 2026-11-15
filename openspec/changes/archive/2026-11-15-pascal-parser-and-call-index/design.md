@@ -66,9 +66,12 @@ quando o Dependency Graph migrar.
    Unit, respeitando `interface` (visível por quem usa) e `implementation`
    (visível só na própria Unit).
 2. **Corpos**: para cada corpo de Method/bloco, percorre as instruções com
-   uma pilha de escopos (locais → parâmetros → `with` → `Self`/classe e
-   ancestrais → Unit → `uses` em ordem reversa, como o compilador Delphi) e
-   resolve cada designador (`a.b[i].c(...)`) passo a passo até o tipo final.
+   uma pilha de escopos (`with`, do mais interno para o mais externo →
+   locais e parâmetros, inclusive das rotinas envolventes → `Self`/classe e
+   ancestrais → Unit → `uses` da implementation e depois da interface, em
+   ordem reversa → `System`, como o compilador Delphi; o `with` esconde até
+   variáveis locais) e resolve cada designador (`a.b[i].c(...)`) passo a passo
+   até o tipo final.
 
 A segunda passada precisa da primeira completa porque uma Unit pode chamar
 tipos declarados em Units que aparecem depois no `.dpr`.
@@ -86,21 +89,53 @@ operando de `@` → **referência** (marca Entry Point). Qualquer outro uso
 (instrução isolada, expressão, com ou sem parênteses) → **chamada**. Quando o
 tipo do parâmetro/lado esquerdo não puder ser resolvido, o padrão é
 **chamada** (Delphi chama funções sem parênteses; tratar como referência
-perderia Callers reais).
+perderia Callers reais), com duas exceções:
+
+- Uma **procedure** (sem valor de retorno) usada onde se espera um valor —
+  lado direito de `:=` ou argumento — só pode estar sendo passada adiante:
+  é **referência**, qualquer que seja o tipo do destino.
+- Atribuição a uma propriedade cujo nome segue a convenção de evento do
+  Delphi (`On` + maiúscula) num receptor de tipo não resolvido é tratada como
+  tipo procedural: o lado direito é **referência**. Sem isso,
+  `Botao.OnClick := BotaoClick` com `Botao: TButton` (VCL, sem stub) contaria
+  como chamada.
+
+Ler ou escrever uma property cujo acessor (`read`/`write`) é um método
+executa esse método: conta como **chamada** dele.
 
 ### D4. Polymorphic Calls no índice, não na expansão
 
 O índice guarda, para cada Method, a lista de chamadas recebidas como
-`{ callerId, kind: 'direct' | 'polymorphic', viaId? }`. Na montagem, cada
-chamada resolvida para um método virtual/de interface é replicada para todos
-os overrides/implementações. Assim `expandCallerGraph` só consulta
-`callersOf(id)` e não conhece herança.
+`{ callerId, kind: 'direct' | 'polymorphic', viaId?, viaLabel? }`. Na
+montagem, cada chamada resolvida para um método virtual/de interface é
+replicada assim:
+
+- **Virtual** (`virtual`/`dynamic`/`override`/`abstract`): para cada
+  `override` com corpo em classes **descendentes do tipo estático do
+  receptor** (não de toda a hierarquia do método declarado), desde que a
+  cadeia de `override` até o método chamado não seja interrompida por uma
+  redeclaração sem `override`. `D.Salvar` com `D: TDerived` não alcança um
+  `override` num irmão de `TDerived`, que nunca seria executado ali.
+- **Interface**: para o Method que implementa o método (procurado pelo nome,
+  com herança) em cada classe do Project que implementa a interface ou uma
+  descendente dela, direta ou indiretamente.
+- `inherited` é despacho estático: nunca gera Polymorphic Call.
+
+Assim `expandCallerGraph` só consulta os Callers de cada id e não conhece
+herança.
 
 ### D5. Índice serializável e chaveado por `id`
 
 `CallIndex` = `{ projectName, units: [{ unitName, methods: [{ id, label,
-className, name }] }], callers: Map<id, CallRef[]>, entryPoints: Set<id>,
-skippedUnits: [{ unitName, reason }] }`. Ordem dos `CallRef` = ordem do
+className, name }], skipped? }], nodes: Map<id, { id, label, unitName, kind
+}>, callers: Map<id, CallRef[]>, entryPoints: Set<id>, skippedUnits: [{
+unitName, reason }] }`. `nodes` tem todos os Methods e blocos especiais
+(`kind`: `method`, `program`, `initialization`, `finalization`) e é de onde
+`expandCallerGraph` tira rótulos e tipos dos nós; `units[].skipped` é o
+motivo de uma Unit não analisada, devolvido pelo `methods:list`. Chamadas
+para ids que não estão em `nodes` (métodos sem corpo, de stubs) são
+descartadas. Routines declaradas no próprio `.dpr` não são Methods: o que
+acontece dentro delas é atribuído ao bloco principal (`Programa`). Ordem dos `CallRef` = ordem do
 Project (Units na ordem do `.dpr`, depois posição no fonte), o que torna a
 DFS de `expandCallerGraph` determinística sem ordenar nada depois.
 
@@ -144,10 +179,17 @@ renderer distinguirá pelo prefixo `[PROJECT_REPLACED]` etc.
 ### D9. Leitura de `.dfm`/`.fmx`
 
 Detecta binário pelo primeiro byte (`0xFF` / assinatura `TPF0`) e ignora. No
-texto, reconhece `object|inherited|inline Nome: Tipo ... end` e linhas
-`OnXxx = Identificador`; os identificadores são resolvidos como Methods da
-classe do formulário (a classe da Unit cujo `{$R}` aponta o arquivo; com
-`{$R *.dfm}` o arquivo tem o mesmo nome base da `.pas`).
+texto, reconhece `object|inherited|inline Nome: Tipo ... end` (e itens de
+coleções) e toda linha `Propriedade = Identificador`, não só `OnXxx`:
+eventos de dataset como `BeforePost` e `AfterScroll` não começam com `On`.
+Os identificadores são resolvidos como Methods da classe do formulário (a
+classe do objeto raiz do arquivo, na Unit cujo `{$R}` o aponta; com
+`{$R *.dfm}` o arquivo tem o mesmo nome base da `.pas`); o que não resolve
+para um Method com corpo (`FocusControl = edNome`, `FieldKind = fkLookup`) é
+ignorado. Como no Delphi, os handlers de um formulário valem também para os
+formulários herdados dele, resolvidos pelo nome na classe descendente: o
+`OnShow = FormShow` de `uCadastroBase.dfm` marca `TfmCadastroSessoes.FormShow`
+quando o filho redeclara `FormShow`.
 
 ### D10. Stubs da RTL como fonte Pascal embutida
 
@@ -162,11 +204,12 @@ paralelo de "assinatura" e o parser é exercitado com genéricos.
   → falha isolada por Unit (aparece em `skippedUnits` com linha/coluna); o
   projeto real Cine Tapioca (14 Units VCL com `.dfm` texto e herança de
   formulário) entra nos testes como fixture e precisa ser analisado inteiro,
-  sem `skippedUnits`, antes de fechar a change. Ele não usa generics,
-  interfaces, `{$IFDEF}` nem Polymorphic Calls reais (o único `override`,
-  `TfmCadastroSessoes.ValidarDados`, não tem `virtual` no ancestral); esses
-  construtos ficam cobertos só pela fixture sintética `callGraph`. O
-  resolvedor não pode falhar diante desse `override` órfão.
+  sem `skippedUnits`, antes de fechar a change. Ele cobre Polymorphic Calls
+  reais (`TfmCadastroBase.Save` chama o virtual `ValidarDados`, com
+  `override` em cinco formulários filhos), mas não usa generics,
+  interfaces nem `{$IFDEF}`; esses construtos ficam cobertos só pela fixture
+  sintética `callGraph`. Vários `.pas` dele estão em Windows-1252, o que
+  exercita a leitura com acentos fora de UTF-8 em strings e comentários.
 - [Classificação chamada × referência erra quando o tipo procedural não é
   resolvido] → padrão "chamada" (D3), que no pior caso gera um Caller a mais
   em vez de esconder um real.

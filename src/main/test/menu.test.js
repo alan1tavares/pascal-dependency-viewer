@@ -1,10 +1,10 @@
-import { jest } from '@jest/globals';
+import { vi } from 'vitest';
 
-const buildFromTemplate = jest.fn((template) => template);
-const setApplicationMenu = jest.fn();
-const showMessageBox = jest.fn();
+const buildFromTemplate = vi.fn((template) => template);
+const setApplicationMenu = vi.fn();
+const showMessageBox = vi.fn();
 
-jest.unstable_mockModule('electron', () => ({
+vi.doMock('electron', () => ({
   Menu: { buildFromTemplate, setApplicationMenu },
   dialog: { showMessageBox },
 }));
@@ -13,8 +13,8 @@ const { buildMenu } = await import('../menu.js');
 const { COMMANDS } = await import('../../domain/commands/index.js');
 
 function buildTestMenu(overrides = {}) {
-  const mainWindow = { webContents: { send: jest.fn() } };
-  const performOpenProject = jest.fn();
+  const mainWindow = { webContents: { send: vi.fn() } };
+  const performOpenProject = vi.fn();
   buildMenu(mainWindow, { performOpenProject, ...overrides });
   const template = buildFromTemplate.mock.calls[buildFromTemplate.mock.calls.length - 1][0];
   return { mainWindow, performOpenProject, template };
@@ -115,7 +115,7 @@ test('os rótulos de "Arquivo" e "Edição" batem com os do catálogo de Command
 
 test('"Abrir projeto (.dpr)" reaproveita performOpenProject e envia app:project-loaded', async () => {
   const project = { projectUnits: [], projectDir: '/tmp' };
-  const performOpenProject = jest.fn().mockResolvedValue(project);
+  const performOpenProject = vi.fn().mockResolvedValue(project);
   const { template, mainWindow } = buildTestMenu({ performOpenProject });
 
   await template[0].submenu[0].click();
@@ -125,7 +125,7 @@ test('"Abrir projeto (.dpr)" reaproveita performOpenProject e envia app:project-
 });
 
 test('"Abrir projeto (.dpr)" não envia nada quando o diálogo é cancelado', async () => {
-  const performOpenProject = jest.fn().mockResolvedValue(null);
+  const performOpenProject = vi.fn().mockResolvedValue(null);
   const { template, mainWindow } = buildTestMenu({ performOpenProject });
 
   await template[0].submenu[0].click();

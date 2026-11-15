@@ -62,6 +62,8 @@ export async function stubPreload(page: Page, graph: Graph = SAMPLE_GRAPH) {
       listRecentProjects: async () => [],
       openRecentProject: async () => {},
       runCommand: async () => {},
+      listUnitMethods: async () => ({ methods: [] }),
+      expandCallerGraph: async () => ({ nodes: [], edges: [], skippedUnits: [] }),
       onProjectLoaded: on('app:project-loaded'),
       onShowCommandPalette: on('app:show-command-palette'),
       onShowOpenRecent: on('app:show-open-recent'),

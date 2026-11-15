@@ -7,6 +7,7 @@ import { createKeySequence } from "./keySequence.js";
 import { performOpenProject, registerProjectHandler } from "./ipc/project.js";
 import { registerGraphHandler } from "./ipc/graph.js";
 import { registerCommandsHandler } from "./ipc/commands.js";
+import { registerCallGraphHandler } from "./ipc/callGraph.js";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -17,6 +18,7 @@ let mainWindow;
 
 registerProjectHandler(ipcMain);
 registerGraphHandler(ipcMain);
+registerCallGraphHandler(ipcMain);
 registerCommandsHandler(ipcMain, { performOpenProject });
 
 const createWindow = () => {

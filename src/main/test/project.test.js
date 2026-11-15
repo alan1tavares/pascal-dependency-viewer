@@ -1,21 +1,24 @@
-import { jest } from '@jest/globals';
+import { vi } from 'vitest';
 
-const showOpenDialog = jest.fn();
-const showMessageBox = jest.fn();
-const readFile = jest.fn();
-const parseDprSource = jest.fn();
+const showOpenDialog = vi.fn();
+const showMessageBox = vi.fn();
+const readFile = vi.fn();
+const parseDprSource = vi.fn();
 const recentProjects = {
-  add: jest.fn(),
-  remove: jest.fn(),
-  list: jest.fn(),
+  add: vi.fn(),
+  remove: vi.fn(),
+  list: vi.fn(),
 };
 
-jest.unstable_mockModule('electron', () => ({
+const callIndexCache = { setProject: vi.fn() };
+
+vi.doMock('../services/callIndexCache.js', () => ({ callIndexCache }));
+vi.doMock('electron', () => ({
   dialog: { showOpenDialog, showMessageBox },
 }));
-jest.unstable_mockModule('../services/fileSystem.js', () => ({ readFile }));
-jest.unstable_mockModule('../services/recentProjects.js', () => recentProjects);
-jest.unstable_mockModule('../../domain/parseDprSource/index.js', () => ({
+vi.doMock('../services/fileSystem.js', () => ({ readFile }));
+vi.doMock('../services/recentProjects.js', () => recentProjects);
+vi.doMock('../../domain/parseDprSource/index.js', () => ({
   default: parseDprSource,
 }));
 
@@ -42,6 +45,36 @@ test('loadProject lê, parseia, registra o recente e devolve o Project', () => {
     projectUnits: [{ unitName: 'UnitA', path: 'UnitA.pas' }],
     projectDir: '/proj',
   });
+});
+
+test('loadProject registra o Project no cache do índice de chamadas, sem mudar o retorno', () => {
+  callIndexCache.setProject.mockClear();
+
+  const project = loadProject('/proj/App.dpr');
+
+  expect(callIndexCache.setProject).toHaveBeenCalledTimes(1);
+  expect(callIndexCache.setProject).toHaveBeenCalledWith({
+    dprPath: '/proj/App.dpr',
+    projectDir: '/proj',
+    projectUnits: [{ unitName: 'UnitA', path: 'UnitA.pas' }],
+  });
+  expect(Object.keys(project).sort()).toEqual(['projectDir', 'projectUnits']);
+});
+
+test('falha de parse não troca o Project do cache', () => {
+  callIndexCache.setProject.mockClear();
+  parseDprSource.mockImplementationOnce(() => { throw new TypeError('parse'); });
+
+  expect(() => loadProject('/proj/Ruim.dpr')).toThrow('parse');
+  expect(callIndexCache.setProject).not.toHaveBeenCalled();
+});
+
+test('falha de leitura não troca o Project do cache', () => {
+  callIndexCache.setProject.mockClear();
+  readFile.mockImplementationOnce(() => { throw Object.assign(new Error('x'), { code: 'ENOENT' }); });
+
+  expect(() => loadProject('/proj/Sumiu.dpr')).toThrow();
+  expect(callIndexCache.setProject).not.toHaveBeenCalled();
 });
 
 test('performOpenProject registra o recente ao abrir um .dpr pelo diálogo', async () => {
@@ -77,7 +110,7 @@ test('recentProjects:list devolve a lista persistida', () => {
 });
 
 test('recentProjects:open carrega o Project, registra e envia app:project-loaded', async () => {
-  const event = { sender: { send: jest.fn() } };
+  const event = { sender: { send: vi.fn() } };
 
   await registerHandlers()['recentProjects:open'](event, '/proj/A.dpr');
 
@@ -91,7 +124,7 @@ test('recentProjects:open carrega o Project, registra e envia app:project-loaded
 
 test('recentProjects:open com arquivo ausente mostra erro, remove a entrada e não envia nada', async () => {
   readFile.mockImplementation(() => { throw Object.assign(new Error('x'), { code: 'ENOENT' }); });
-  const event = { sender: { send: jest.fn() } };
+  const event = { sender: { send: vi.fn() } };
 
   await registerHandlers()['recentProjects:open'](event, '/proj/Velho.dpr');
 
@@ -102,7 +135,7 @@ test('recentProjects:open com arquivo ausente mostra erro, remove a entrada e n�
 
 test('recentProjects:open propaga falhas de parse sem remover a entrada', async () => {
   parseDprSource.mockImplementation(() => { throw new TypeError('parse'); });
-  const event = { sender: { send: jest.fn() } };
+  const event = { sender: { send: vi.fn() } };
 
   await expect(registerHandlers()['recentProjects:open'](event, '/proj/A.dpr')).rejects.toThrow('parse');
   expect(recentProjects.remove).not.toHaveBeenCalled();

@@ -7,7 +7,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     setupFiles: [],
-    include: ['src/domain/test/**/*.test.js'],
+    include: ['src/domain/test/**/*.test.js', 'src/main/test/**/*.test.js'],
     exclude: ['node_modules', 'node_modules_mac', 'node_modules_linux'],
     testTimeout: 5000,
     coverage: {

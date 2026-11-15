@@ -14,7 +14,7 @@ graph from there.
 ## Commands
 
 - `npm start` — launch the Electron app in dev mode (`electron-forge start`, Vite dev server + HMR)
-- `npm test` — run all tests (Vitest for domínio + componentes Svelte)
+- `npm test` — run all tests (Vitest: `src/domain/test/` and `src/main/test/`)
 - `npm run test:watch` — run tests in watch mode
 - `npx vitest run src/domain/test/parsePascalSource.test.js` — run a single test file
 - `npx vitest run -t "get the unit name"` — run a single test by name
@@ -53,6 +53,20 @@ layout — plain JavaScript, no UI framework, no `shared/` — was chosen).
   `app:project-loaded` only if a Project was chosen; `selectUnit` pushes
   `app:show-root-unit-selection`; `openRecent` pushes `app:show-open-recent`;
   `showWelcome` pushes `app:show-welcome`. Unknown ids are ignored.
+- `src/main/services/callIndexCache.js`: `createCallIndexCache({ build,
+  readFile })` and the `callIndexCache` singleton — the only Project state the
+  main process holds (ADR 0007). `loadProject` calls `setProject({ dprPath,
+  projectDir, projectUnits })` after the `.dpr` parses; `getIndex()` builds the
+  call index on first use (`buildCallIndex`, files read relative to
+  `projectDir`), shares one build between concurrent requests and keeps it
+  until the next `setProject` (no file watching). A build that finishes after
+  another Project was loaded rejects with `[PROJECT_REPLACED]`; no Project →
+  `[NO_PROJECT]`.
+- `src/main/ipc/callGraph.js`: `registerCallGraphHandler` — `methods:list`
+  (`unitName` → `{ methods: [{ id, label }], skipped? }`) and
+  `callerGraph:expand` (`methodId` → `{ nodes, edges, skippedUnits }`, or
+  `[METHOD_NOT_FOUND]`). Error codes travel as a `[CODE]` prefix in the
+  message because Electron drops custom error properties.
 - `src/main/services/fileSystem.js`: thin wrapper around
   `fs.readFileSync(filePath, 'utf-8')`, used by both `ipc/` modules.
 - `src/main/services/recentProjects.js`: `list()`/`add(path)`/`remove(path)`
@@ -115,6 +129,26 @@ layout — plain JavaScript, no UI framework, no `shared/` — was chosen).
   duplicating), `activateTab`, `closeTab` (activates the most recently used
   Tab; closing the last one reopens the Welcome Tab), `canCloseTab` (false
   only for a lone Welcome Tab), `closeUnitTabs` and `nextTab`/`previousTab`.
+- `src/domain/pascalParser/`: hand-written Delphi parser (ADR 0006) —
+  `preprocess.js` (`{$IFDEF}`/`{$IF}` with a fixed set of default symbols,
+  keeping line/column), `lexer.js` (tokens with line/column; comments and
+  strings never yield identifiers) and `parser.js` (`parseSource` → Unit or
+  Program AST; failures are `ParseError` with line/column).
+- `src/domain/methods/`: `listUnitMethods(ast)` (routines with a body in the
+  `implementation`, overloads merged, nested routines excluded) and the id
+  format — `unit:<unit>|<class>|<name>` (lowercased), `program:<project>`,
+  `init:<unit>`, `final:<unit>`.
+- `src/domain/callIndex/`: `buildCallIndex({ dprPath, projectUnits,
+  readFile })` — async, yields between Units, never reads External Units.
+  `symbols.js` is the declarations pass (symbol table, inheritance,
+  generics, `resolveType`), `resolver.js` walks bodies resolving each
+  receiver's type and reports direct calls, Polymorphic Calls (virtual and
+  interface) and references (Entry Points); unresolved receivers produce
+  nothing. `rtlStubs.js` holds Pascal stubs for the RTL containers, `dfm.js`
+  reads text forms (handlers of ancestor forms apply to inherited forms).
+- `src/domain/expandCallerGraph/`: pure DFS from a Target Method over the
+  index (one node per Method/block, self-loops, back-edges, direct edge wins
+  over polymorphic, deterministic order).
 - `src/domain/commands/`: the Command catalog (`COMMANDS`: `openProject`,
   `openRecent`, `selectUnit`, `showWelcome`) plus the pure `availableCommands`
   (`selectUnit` needs a Project), `filterCommands` (case- and
@@ -124,7 +158,8 @@ layout — plain JavaScript, no UI framework, no `shared/` — was chosen).
 the `BrowserWindow` (`src/main/index.js`). The renderer never `require()`s
 anything directly — `src/preload/api.js` exposes a narrow API on
 `window.pascalDependencyViewer`: `openProject()`, `expandFromRootUnit(args)`,
-`listRecentProjects()`, `openRecentProject(path)` and `runCommand(id)` (all
+`listRecentProjects()`, `openRecentProject(path)`, `runCommand(id)`,
+`listUnitMethods(unitName)` and `expandCallerGraph(methodId)` (all
 `ipcRenderer.invoke`), plus `onProjectLoaded(cb)`,
 `onShowRootUnitSelection(cb)`, `onShowOpenRecent(cb)`,
 `onShowCommandPalette(cb)` and `onShowWelcome(cb)` listeners.
@@ -164,7 +199,8 @@ anything directly — `src/preload/api.js` exposes a narrow API on
    Tab, reopening it if needed).
 5. `Edição > Selecionar Unit`'s `click` handler (`main/menu.js`) just sends
    `mainWindow.webContents.send('app:show-root-unit-selection')`, with no
-   payload — the main process holds no Project state. The renderer
+   payload — the renderer, not the main process, owns the Project's Unit list
+   (the main only caches the call index, see `callIndexCache`). The renderer
    (`App.svelte`) keeps the last `{ projectUnits, projectDir }` received via
    `onProjectLoaded` in `projectStore`, and opens the Command Palette's
    `Selecionar Unit` mode with it (`enterRootUnitMode(projectUnits,
@@ -229,7 +265,7 @@ A partir da branch `feat/svelte`, o projeto integra **Svelte** como framework UI
 
 - **Vite**: `vite.renderer.config.mjs` inclui `vite-plugin-svelte`
 - **TypeScript**: Componentes Svelte usam `<script lang="ts">` (opcional, gradual). `src/renderer/services/` e stores têm tipos TypeScript. Código vanilla permanece em JavaScript puro.
-- **Testing**: Vitest + `@testing-library/svelte` para testes de componentes Svelte. Jest continua para `src/domain/`. `npm test` roda ambos.
+- **Testing**: Vitest + `@testing-library/svelte` para testes de componentes Svelte. Os testes de `src/domain/` e de `src/main/` também rodam no Vitest (`vi.fn`, `vi.doMock`); `npm test` roda tudo.
 - **CSS**: Svelte `<style>` scoped (encapsulado por componente, padrão Svelte). Nenhuma dependência CSS global nova.
 
 ### Migração Gradual
@@ -248,7 +284,9 @@ Após cada migração, o componente vanilla é deletado, a pasta não muda de es
 
 ## Notes
 
-- Parsing is regex-based; `selectUsesFromSource` always extracts both the
+- The Dependency Graph's parsing is regex-based (the Caller Graph uses the
+  hand-written parser in `src/domain/pascalParser/`, ADR 0006);
+  `selectUsesFromSource` always extracts both the
   `interface` and `implementation` `uses` clauses, tagging each unit with
   its Uses Clause Origin. There is no handling for a missing `unit`/`uses`
   clause — `.match(...)[0]` will throw on no match.
