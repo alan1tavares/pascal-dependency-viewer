@@ -30,6 +30,10 @@ export function enterRootUnitMode(projectUnits, projectDir, options) {
   getApp().enterRootUnitMode(projectUnits, projectDir, options);
 }
 
+export function enterMethodMode(unit, options) {
+  getApp().enterMethodMode(unit, options);
+}
+
 export function isCommandPaletteOpen() {
   return app ? app.isPaletteOpen() : false;
 }

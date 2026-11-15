@@ -41,6 +41,12 @@ do arquivo como subtexto secundário. O sistema SHALL permitir filtrar a
 lista por um texto digitado pelo usuário, comparado de forma
 case-insensitive contra o nome da unit **e** contra o caminho do arquivo.
 
+O modo SHALL exibir, junto ao input, o texto `Selecionar Unit` como prefixo
+fixo, não editável, que continua visível enquanto o usuário digita — com o
+mesmo aspecto e a mesma posição do prefixo dos modos `Abrir recente` e
+`Selecionar Método` — e, enquanto o input estiver vazio, o texto de ajuda
+`Filtrar por nome ou caminho da unit`.
+
 #### Scenario: Tela lista todas as Project Units do `.dpr` aberto
 - **WHEN** o Projeto aberto tem Project Units `UnitA`, `UnitB` e `UnitC`
 - **THEN** o modo `Selecionar Unit` da Command Palette exibe as três, cada
@@ -57,6 +63,16 @@ case-insensitive contra o nome da unit **e** contra o caminho do arquivo.
   `modulos/estoque/Relatorios.pas`), e o usuário digita `estoque`
 - **THEN** somente `Relatorios` permanece visível, porque seu caminho
   contém `estoque` mesmo que seu nome não contenha
+
+#### Scenario: Prefixo fixo do modo Selecionar Unit
+- **WHEN** o modo `Selecionar Unit` é exibido e o usuário digita `unitb`
+- **THEN** o prefixo `Selecionar Unit` continua visível junto ao input, que
+  contém `unitb`, e o texto digitado não inclui o prefixo
+
+#### Scenario: Texto de ajuda com o input vazio
+- **WHEN** o modo `Selecionar Unit` é exibido com o input vazio
+- **THEN** o input mostra o texto de ajuda `Filtrar por nome ou caminho da
+  unit`, além do prefixo `Selecionar Unit`
 
 ### Requirement: Navegação por teclado no modo Selecionar Unit
 No modo `Selecionar Unit`, `↑` e `↓` SHALL mover o destaque entre os itens
@@ -76,10 +92,10 @@ Root Unit, com o mesmo efeito de clicar nele.
 
 ### Requirement: Seleção de uma Root Unit renderiza seu grafo de dependências direto
 Ao escolher uma Project Unit na tela de busca/listagem como Root Unit, o
-sistema SHALL exibir o Dependency Graph dessa Root Unit numa Graph Tab
-(capability `tabs`): abre uma nova Graph Tab se a Root Unit ainda não tem
+sistema SHALL exibir o Dependency Graph dessa Root Unit numa Unit Tab
+(capability `tabs`): abre uma nova Unit Tab se a Root Unit ainda não tem
 uma, ou ativa a existente, sem recalcular o grafo, se já tem. Para abrir
-uma nova Graph Tab, o sistema SHALL expandir recursivamente todas as
+uma nova Unit Tab, o sistema SHALL expandir recursivamente todas as
 Project Units alcançáveis a partir dela via `uses` — sempre considerando
 tanto a seção `interface` quanto a `implementation` de cada unidade
 visitada — produzindo o Dependency Graph completo, não apenas a Root Unit
@@ -93,7 +109,7 @@ SHALL exibir as External Unit com um estilo visual distinto (nó folha) das
 Project Unit. Uma mesma unidade alcançável por mais de um caminho a partir
 da Root Unit SHALL aparecer como um único nó no grafo renderizado. Quais
 dessas arestas ficam visíveis ao usuário — de acordo com a Uses Clause
-Origin de cada uma — é decidido pelo View Filter da Graph Tab (capability
+Origin de cada uma — é decidido pelo View Filter da Unit Tab (capability
 `graph-view-filter`), não por nenhuma escolha feita nesta tela de
 busca/listagem.
 
@@ -102,13 +118,13 @@ busca/listagem.
   `UnitPrincipal.pas`, relativo ao diretório do `.dpr` aberto) na tela de
   busca/listagem
 - **THEN** o app lê `UnitPrincipal.pas` do disco, extrai seu nome de unit e
-  sua cláusula `uses`, e exibe, numa nova Graph Tab ativa, o grafo com o nó
+  sua cláusula `uses`, e exibe, numa nova Unit Tab ativa, o grafo com o nó
   `UnitPrincipal` e um edge para cada dependência direta
 
-#### Scenario: Root Unit escolhida já tem Graph Tab aberta
-- **WHEN** a Graph Tab `UnitPrincipal` já está aberta e o usuário escolhe
+#### Scenario: Root Unit escolhida já tem Unit Tab aberta
+- **WHEN** a Unit Tab `UnitPrincipal` já está aberta e o usuário escolhe
   `UnitPrincipal` de novo na tela de busca/listagem
-- **THEN** a Graph Tab `UnitPrincipal` existente é ativada e nenhum arquivo
+- **THEN** a Unit Tab `UnitPrincipal` existente é ativada e nenhum arquivo
   é lido do disco
 
 #### Scenario: Dependência transitiva de uma Project Unit intermediária aparece no grafo
@@ -179,13 +195,13 @@ definido pela capability `command-palette`):
 - **WHEN** o usuário acabou de abrir um `.dpr`, o modo `Selecionar Unit` é
   exibido automaticamente, e o usuário pressiona `Esc` ou clica fora do
   card
-- **THEN** a paleta fecha, nenhuma Graph Tab é aberta, a Welcome Tab
+- **THEN** a paleta fecha, nenhuma Unit Tab é aberta, a Welcome Tab
   continua ativa e o Projeto continua carregado
 
 #### Scenario: Escolher a Root Unit depois de fechar a abertura automática
 - **WHEN** nas mesmas condições do cenário anterior, depois de fechar a
   paleta o usuário aciona `Edição > Selecionar Unit` e escolhe `UnitA`
-- **THEN** a Graph Tab `UnitA` é aberta e fica ativa
+- **THEN** a Unit Tab `UnitA` é aberta e fica ativa
 
 #### Scenario: Cmd/Ctrl+P e Cmd/Ctrl+K R trocam de modo na abertura automática
 - **WHEN** nas mesmas condições do primeiro cenário, em vez de fechar a
@@ -209,7 +225,7 @@ definido pela capability `command-palette`):
 
 #### Scenario: Esc fecha tudo quando aberto pelo menu Edição
 - **WHEN** o usuário reabre a Seleção de Unit via `Edição > Selecionar
-  Unit` com a Graph Tab `UnitA` ativa, e pressiona `Esc`
+  Unit` com a Unit Tab `UnitA` ativa, e pressiona `Esc`
 - **THEN** a paleta fecha inteiramente, nenhuma nova Root Unit é
   selecionada e `UnitA` continua sendo a Tab ativa
 

@@ -1,4 +1,4 @@
-import { Menu, dialog } from "electron";
+import { Menu } from "electron";
 
 import { COMMANDS } from "../domain/commands/index.js";
 import { runCommand } from "./commands.js";
@@ -42,12 +42,11 @@ export function buildMenu(
           click: () => run("selectUnit"),
         },
         {
-          label: "Selecionar Método",
-          click: () => {
-            dialog.showMessageBox(mainWindow, {
-              message: "Selecionar Método ainda será implementado",
-            });
-          },
+          // Habilitado só com uma Unit Tab ativa (`ipc/tabs.js`).
+          id: "selectMethod",
+          label: labelOf("selectMethod"),
+          enabled: false,
+          click: () => run("selectMethod"),
         },
       ],
     },
@@ -77,4 +76,5 @@ export function buildMenu(
 
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
+  return menu;
 }

@@ -2,8 +2,14 @@ export const WELCOME_TAB_ID = 'welcome';
 
 const WELCOME_TAB = { id: WELCOME_TAB_ID, kind: 'welcome' };
 
-export function graphTabId(unitName) {
-  return `graph:${unitName.toLowerCase()}`;
+export function unitTabId(unitName) {
+  return `unit:${unitName.toLowerCase()}`;
+}
+
+// O id do Method (`unit:<unit>|<classe>|<nome>`) também começa com `unit:`;
+// o prefixo próprio evita colisão com o id de uma Unit Tab.
+export function methodTabId(methodId) {
+  return `method:${methodId}`;
 }
 
 export function initialTabsState() {
@@ -34,8 +40,12 @@ export function openWelcomeTab(state) {
   return openTab(state, WELCOME_TAB);
 }
 
-export function openGraphTab(state, tab) {
-  return openTab(state, { ...tab, kind: 'graph' });
+export function openUnitTab(state, tab) {
+  return openTab(state, { ...tab, kind: 'unit' });
+}
+
+export function openMethodTab(state, tab) {
+  return openTab(state, { ...tab, kind: 'method' });
 }
 
 export function canCloseTab(state, id) {
@@ -53,8 +63,9 @@ export function closeTab(state, id) {
   return { tabs, activeId, activationOrder };
 }
 
-export function closeGraphTabs(state) {
-  const tabs = state.tabs.filter((tab) => tab.kind !== 'graph');
+// Abrir um Project fecha todas as Tabs dele (Unit Tabs e Method Tabs).
+export function closeProjectTabs(state) {
+  const tabs = state.tabs.filter((tab) => tab.kind !== 'unit' && tab.kind !== 'method');
   const remaining = new Set(tabs.map((tab) => tab.id));
   const cleared = {
     tabs,

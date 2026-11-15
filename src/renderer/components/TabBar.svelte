@@ -14,6 +14,13 @@
     return tab.kind === 'welcome' ? 'Bem-vindo' : tab.title;
   }
 
+  // Unit Tab: caminho do .pas; Method Tab: `Unit — caminho do .pas`.
+  function tooltipOf(tab) {
+    if (tab.kind === 'unit') return tab.path;
+    if (tab.kind === 'method') return `${tab.unitName} — ${tab.unitPath}`;
+    return undefined;
+  }
+
   function closeFromButton(event, id) {
     event.stopPropagation();
     onClose(id);
@@ -29,7 +36,7 @@
       tabindex="0"
       aria-selected={active}
       data-tab-id={tab.id}
-      title={tab.kind === 'graph' ? tab.path : undefined}
+      title={tooltipOf(tab)}
       onmousedown={() => onActivate(tab.id)}
       onkeydown={(event) => event.key === 'Enter' && onActivate(tab.id)}
     >

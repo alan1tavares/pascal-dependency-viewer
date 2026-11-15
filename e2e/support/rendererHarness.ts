@@ -38,8 +38,29 @@ export const SAMPLE_GRAPH: Graph = {
 
 /** Stuba `window.pascalDependencyViewer` (normalmente exposto pelo preload) e
  * expõe `window.__emit(channel, payload)` para simular os pushes do main. */
+/** Methods de UnitA e Caller Graph de `TCliente.Salvar` que o main devolveria. */
+export const SAMPLE_METHODS = [
+  { id: 'unit:unita|tcliente|salvar', label: 'TCliente.Salvar' },
+  { id: 'unit:unita||formatar', label: 'Formatar' },
+]
+
+export const SAMPLE_CALLER_GRAPH = {
+  nodes: [
+    { id: 'unit:unita|tcliente|salvar', label: 'TCliente.Salvar', unitName: 'UnitA', kind: 'method', isTarget: true, isEntryPoint: false },
+    { id: 'unit:unita|tform1|button1click', label: 'TForm1.Button1Click', unitName: 'UnitA', kind: 'method', isTarget: false, isEntryPoint: true },
+    { id: 'unit:unitb||gravar', label: 'Gravar', unitName: 'UnitB', kind: 'method', isTarget: false, isEntryPoint: false },
+    { id: 'program:sample', label: 'Programa', unitName: 'Sample', kind: 'program', isTarget: false, isEntryPoint: true },
+  ],
+  edges: [
+    { from: 'unit:unita|tform1|button1click', to: 'unit:unita|tcliente|salvar', isBackEdge: false, isPolymorphic: false },
+    { from: 'unit:unitb||gravar', to: 'unit:unita|tcliente|salvar', isBackEdge: false, isPolymorphic: true, viaId: 'unit:unita|tbase|salvar', viaLabel: 'TBase.Salvar' },
+    { from: 'program:sample', to: 'unit:unitb||gravar', isBackEdge: false, isPolymorphic: false },
+  ],
+  skippedUnits: [],
+}
+
 export async function stubPreload(page: Page, graph: Graph = SAMPLE_GRAPH) {
-  await page.addInitScript((graph) => {
+  await page.addInitScript(({ graph, methods, callerGraph }) => {
     const listeners: Record<string, ((payload?: unknown) => void)[]> = {}
     ;(window as any).__emit = (channel: string, payload?: unknown) =>
       (listeners[channel] || []).forEach((cb) => cb(payload))
@@ -62,13 +83,17 @@ export async function stubPreload(page: Page, graph: Graph = SAMPLE_GRAPH) {
       listRecentProjects: async () => [],
       openRecentProject: async () => {},
       runCommand: async () => {},
+      listUnitMethods: async () => ({ methods }),
+      expandCallerGraph: async () => callerGraph,
+      setActiveTabKind: () => {},
+      onShowMethodSelection: on('app:show-method-selection'),
       onProjectLoaded: on('app:project-loaded'),
       onShowCommandPalette: on('app:show-command-palette'),
       onShowOpenRecent: on('app:show-open-recent'),
       onShowRootUnitSelection: on('app:show-root-unit-selection'),
       onShowWelcome: on('app:show-welcome'),
     }
-  }, graph)
+  }, { graph, methods: SAMPLE_METHODS, callerGraph: SAMPLE_CALLER_GRAPH })
 }
 
 export async function loadProject(page: Page, project = SAMPLE_PROJECT) {

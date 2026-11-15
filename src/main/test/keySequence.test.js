@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals';
+import { vi } from 'vitest';
 
 import { createKeySequence } from '../keySequence.js';
 
@@ -8,12 +8,12 @@ const cmdK = () => keyDown('k', { meta: true });
 let onComplete;
 
 function build(isMac = true) {
-  onComplete = jest.fn();
+  onComplete = vi.fn();
   return createKeySequence({ isMac, onComplete });
 }
 
-beforeEach(() => jest.useFakeTimers());
-afterEach(() => jest.useRealTimers());
+beforeEach(() => vi.useFakeTimers());
+afterEach(() => vi.useRealTimers());
 
 test('Cmd+K seguido de R dispara a ação e consome as duas teclas (macOS)', () => {
   const handle = build();
@@ -67,7 +67,7 @@ test('passados 1,5 s sem tecla a sequência é cancelada', () => {
   const handle = build();
 
   handle(cmdK());
-  jest.advanceTimersByTime(1501);
+  vi.advanceTimersByTime(1501);
 
   expect(handle(keyDown('r'))).toBe(false);
   expect(onComplete).not.toHaveBeenCalled();
@@ -77,7 +77,7 @@ test('R antes de 1,5 s ainda completa a sequência', () => {
   const handle = build();
 
   handle(cmdK());
-  jest.advanceTimersByTime(1400);
+  vi.advanceTimersByTime(1400);
   handle(keyDown('r'));
 
   expect(onComplete).toHaveBeenCalledTimes(1);

@@ -10,6 +10,8 @@
     filterRecentProjects,
   } from "../../domain/recentProjects/index.js";
   import { filterProjectUnits } from "../../domain/rootUnitSelection/index.js";
+  import { filterMethods } from "../../domain/methodSelection/index.js";
+  import { ipcErrorCode } from "../../domain/ipcErrors/index.js";
 
   const api = window.pascalDependencyViewer;
   const isMac = api.platform === "darwin";
@@ -17,15 +19,35 @@
   const COMMANDS_MODE = "commands";
   const RECENTS_MODE = "recents";
   const ROOT_UNIT_MODE = "rootUnit";
+  const METHOD_MODE = "method";
   const EMPTY_MESSAGES = {
     [COMMANDS_MODE]: "Nenhum comando encontrado",
     [RECENTS_MODE]: "Nenhum projeto recente",
     [ROOT_UNIT_MODE]: "Nenhuma unit encontrada",
+    [METHOD_MODE]: "Nenhum método encontrado",
+  };
+  // Prefixo fixo dos modos de escolha; a lista de Commands não tem prefixo.
+  const MODE_PREFIXES = {
+    [RECENTS_MODE]: "Abrir recente",
+    [ROOT_UNIT_MODE]: "Selecionar Unit",
+    [METHOD_MODE]: "Selecionar Método",
   };
 
   let hasProject = $state(() => false);
   let getProject = $state(() => null);
+  let getActiveTabKind = $state(() => "welcome");
+  let getActiveUnit = $state(() => null);
   let onRootUnitSelected = $state(null);
+  let onMethodSelected = $state(null);
+
+  // Modo `Selecionar Método`: Unit capturada na entrada, estado da análise
+  // (`loading` | `ready` | `skipped`) e um token que descarta respostas que
+  // chegam depois de a paleta ter mudado de modo, de Unit ou fechado.
+  let methodUnit = $state(null);
+  let methodStatus = $state("loading");
+  let methods = $state([]);
+  let skippedReason = $state("");
+  let methodRequest = 0;
 
   let isOpen = $state(false);
   let mode = $state(COMMANDS_MODE);
@@ -45,8 +67,18 @@
       ? 'Digite um comando'
       : mode === RECENTS_MODE
         ? 'Escolha o projeto'
-        : 'Filtrar por nome ou caminho da unit'
+        : mode === METHOD_MODE
+          ? 'Digite o nome do método'
+          : 'Filtrar por nome ou caminho da unit'
   );
+
+  let emptyMessage = $derived.by(() => {
+    if (mode !== METHOD_MODE) return EMPTY_MESSAGES[mode];
+    if (methodStatus === "loading") return "Analisando Project…";
+    if (methodStatus === "skipped") return `Não foi possível analisar esta Unit: ${skippedReason}`;
+    if (methods.length === 0) return "Esta Unit não tem métodos";
+    return EMPTY_MESSAGES[METHOD_MODE];
+  });
 
   $effect(() => {
     if (isOpen && inputEl) {
@@ -63,7 +95,10 @@
   export function configure(options) {
     hasProject = options.hasProject;
     getProject = options.getProject;
+    getActiveTabKind = options.getActiveTabKind ?? (() => "welcome");
+    getActiveUnit = options.getActiveUnit ?? (() => null);
     onRootUnitSelected = options.onRootUnitSelected;
+    onMethodSelected = options.onMethodSelected;
   }
 
   export function isPaletteOpen() {
@@ -85,6 +120,12 @@
     onRootUnitSelected?.(projectUnit);
   }
 
+  function selectMethod(method) {
+    const unit = methodUnit;
+    closeCommandPalette();
+    onMethodSelected?.(method, unit);
+  }
+
   function executeCommand(command) {
     if (command.id === "openRecent") {
       enterRecentsMode("palette");
@@ -97,6 +138,11 @@
       });
       return;
     }
+    if (command.id === "selectMethod") {
+      const unit = getActiveUnit();
+      if (unit) enterMethodMode(unit, { entry: "palette" });
+      return;
+    }
     closeCommandPalette();
     api.runCommand(command.id);
   }
@@ -104,11 +150,16 @@
   function applyFilter() {
     if (mode === COMMANDS_MODE) {
       filteredItems = filterCommands(
-        availableCommands(COMMANDS, { hasProject: hasProject() }),
+        availableCommands(COMMANDS, {
+          hasProject: hasProject(),
+          activeTabKind: getActiveTabKind(),
+        }),
         inputValue,
       );
     } else if (mode === RECENTS_MODE) {
       filteredItems = filterRecentProjects(recentPaths, inputValue);
+    } else if (mode === METHOD_MODE) {
+      filteredItems = methodStatus === "ready" ? filterMethods(methods, inputValue) : [];
     } else {
       filteredItems = filterProjectUnits(rootUnits, inputValue);
     }
@@ -154,6 +205,43 @@
     resetInput();
   }
 
+  // `unit`: { unitName, path } da Root Unit da Unit Tab ativa.
+  export function enterMethodMode(unit, { entry } = {}) {
+    mode = METHOD_MODE;
+    modeEntry = entry;
+    methodUnit = unit;
+    methodStatus = "loading";
+    methods = [];
+    skippedReason = "";
+    isOpen = true;
+    document.body.style.overflow = 'hidden';
+    resetInput();
+
+    const request = ++methodRequest;
+    const isCurrent = () => request === methodRequest && isOpen && mode === METHOD_MODE;
+    api.listUnitMethods(unit.unitName).then(
+      (result) => {
+        if (!isCurrent()) return;
+        if (result.skipped) {
+          methodStatus = "skipped";
+          skippedReason = result.skipped;
+        } else {
+          methods = result.methods;
+          methodStatus = "ready";
+        }
+        // O texto digitado durante a análise vale como filtro.
+        applyFilter();
+      },
+      (error) => {
+        if (!isCurrent()) return;
+        // Outro Project foi carregado: o fluxo dele segue sem aviso.
+        if (ipcErrorCode(error) === "PROJECT_REPLACED") return;
+        closeCommandPalette();
+        window.alert(`Não foi possível listar os métodos de ${unit.unitName}: ${error.message}`);
+      },
+    );
+  }
+
   function moveSelection(delta) {
     if (filteredItems.length === 0) return;
     selectedIndex =
@@ -165,6 +253,7 @@
     if (!entry) return;
     if (mode === COMMANDS_MODE) executeCommand(entry);
     else if (mode === RECENTS_MODE) openRecentProject(entry);
+    else if (mode === METHOD_MODE) selectMethod(entry);
     else selectRootUnit(entry);
   }
 
@@ -212,6 +301,7 @@
   function getItemKey(entry, idx) {
     if (mode === COMMANDS_MODE) return entry.id;
     if (mode === RECENTS_MODE) return entry;
+    if (mode === METHOD_MODE) return entry.id;
     return entry.path;
   }
 
@@ -242,6 +332,9 @@
     role="presentation"
   >
     <div class="commandPaletteCard" role="dialog" aria-modal="true">
+    {#if MODE_PREFIXES[mode]}
+      <div class="commandPrefix" id="commandPalettePrefix">{MODE_PREFIXES[mode]}</div>
+    {/if}
     <input
       id="commandPaletteInput"
       bind:this={inputEl}
@@ -280,6 +373,16 @@
               <span class="recentDir">{dir}</span>
             </button>
           </li>
+        {:else if mode === METHOD_MODE}
+          <li role="option" aria-selected={idx === selectedIndex}>
+            <button
+              class="commandItem {idx === selectedIndex ? 'selected' : ''}"
+              onclick={() => selectMethod(entry)}
+              type="button"
+            >
+              <span>{entry.label}</span>
+            </button>
+          </li>
         {:else}
           {@const { unitName, path, projectUnit } = renderRootUnitItem(entry)}
           <li role="option" aria-selected={idx === selectedIndex}>
@@ -300,7 +403,7 @@
         id="commandPaletteEmpty"
         class="commandEmpty"
       >
-        {EMPTY_MESSAGES[mode]}
+        {emptyMessage}
       </div>
     {/if}
     </div>
@@ -332,6 +435,13 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+  }
+
+  .commandPrefix {
+    padding: 8px 16px 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
   }
 
   .commandInput {

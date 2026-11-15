@@ -14,7 +14,7 @@ graph from there.
 ## Commands
 
 - `npm start` — launch the Electron app in dev mode (`electron-forge start`, Vite dev server + HMR)
-- `npm test` — run all tests (Vitest for domínio + componentes Svelte)
+- `npm test` — run all tests (Vitest projects: `node` for `src/domain/test/` and `src/main/test/`, `renderer` — jsdom — for `src/renderer/**/*.test.js`)
 - `npm run test:watch` — run tests in watch mode
 - `npx vitest run src/domain/test/parsePascalSource.test.js` — run a single test file
 - `npx vitest run -t "get the unit name"` — run a single test by name
@@ -48,11 +48,30 @@ layout — plain JavaScript, no UI framework, no `shared/` — was chosen).
   Project.
 - `src/main/commands.js`: `runCommand(id, { webContents, performOpenProject })`
   — the single execution point of every Command (`openProject`,
-  `selectUnit`, `openRecent`, `showWelcome`), shared by the native menu and
+  `selectUnit`, `selectMethod`, `openRecent`, `showWelcome`), shared by the native menu and
   the Command Palette. `openProject` runs the native dialog and pushes
   `app:project-loaded` only if a Project was chosen; `selectUnit` pushes
-  `app:show-root-unit-selection`; `openRecent` pushes `app:show-open-recent`;
+  `app:show-root-unit-selection`; `selectMethod` pushes
+  `app:show-method-selection`; `openRecent` pushes `app:show-open-recent`;
   `showWelcome` pushes `app:show-welcome`. Unknown ids are ignored.
+- `src/main/services/callIndexCache.js`: `createCallIndexCache({ build,
+  readFile })` and the `callIndexCache` singleton — the only Project state the
+  main process holds (ADR 0007). `loadProject` calls `setProject({ dprPath,
+  projectDir, projectUnits })` after the `.dpr` parses; `getIndex()` builds the
+  call index on first use (`buildCallIndex`, files read relative to
+  `projectDir`), shares one build between concurrent requests and keeps it
+  until the next `setProject` (no file watching). A build that finishes after
+  another Project was loaded rejects with `[PROJECT_REPLACED]`; no Project →
+  `[NO_PROJECT]`.
+- `src/main/ipc/callGraph.js`: `registerCallGraphHandler` — `methods:list`
+  (`unitName` → `{ methods: [{ id, label }], skipped? }`) and
+  `callerGraph:expand` (`methodId` → `{ nodes, edges, skippedUnits }`, or
+  `[METHOD_NOT_FOUND]`). Error codes travel as a `[CODE]` prefix in the
+  message because Electron drops custom error properties.
+- `src/main/ipc/tabs.js`: `registerActiveTabKindHandler` — listens to
+  `tabs:active-kind` (sent by the renderer on every change of the active
+  Tab) and enables the `selectMethod` menu item (`id: 'selectMethod'`,
+  created disabled) only when the active Tab is a Unit Tab.
 - `src/main/services/fileSystem.js`: thin wrapper around
   `fs.readFileSync(filePath, 'utf-8')`, used by both `ipc/` modules.
 - `src/main/services/recentProjects.js`: `list()`/`add(path)`/`remove(path)`
@@ -73,8 +92,8 @@ layout — plain JavaScript, no UI framework, no `shared/` — was chosen).
   `Abrir recente` and `Sair`), `Edição` (`Selecionar Unit`, `Selecionar
   Método`), `Ferramentas` (`Paleta de Comandos`, `CmdOrCtrl+P`, which sends
   `app:show-command-palette`), `{ role: "viewMenu" }` and `Ajuda`
-  (`Bem-vindo`). The `Arquivo` items, `Selecionar Unit` and `Bem-vindo` call
-  `runCommand` by Command id and take their labels from the catalog in
+  (`Bem-vindo`). The `Arquivo` items, `Selecionar Unit`, `Selecionar Método`
+  and `Bem-vindo` call `runCommand` by Command id and take their labels from the catalog in
   `domain/commands`. `Abrir recente` has no native
   accelerator; the `⌘K R` / `Ctrl+K R` hint is part of its label.
 - `src/preload/index.js` + `src/preload/api.js`: `preload/api.js` is the
@@ -86,46 +105,92 @@ layout — plain JavaScript, no UI framework, no `shared/` — was chosen).
   `#app` in `index.html`.
 - `src/renderer/components/App.svelte`: root component. Renders the
   `TabBar` and, below it, one panel per open Tab (`Welcome` for the Welcome
-  Tab, its own `GraphView` for each Graph Tab). Every panel stays mounted;
+  Tab, its own `GraphView` for each Unit Tab and `CallerGraphView` for each
+  Method Tab). Every panel stays mounted;
   inactive ones are hidden with `visibility: hidden` + `inert`, so each
-  Graph Tab keeps its View Filter, node positions and zoom. Centralizes IPC
-  listeners from `window.pascalDependencyViewer` (onProjectLoaded,
-  onShowCommandPalette, onShowOpenRecent, onShowRootUnitSelection,
-  onShowWelcome), handles the Root Unit picked in the Command Palette
-  (activates its Graph Tab if already open, otherwise calls
+  Unit/Method Tab keeps its View Filter, node positions and zoom. Sends
+  `setActiveTabKind` on every change of the active Tab. Centralizes IPC
+  listeners from `window.pascalDependencyViewer` (onProjectLoaded — which
+  closes Unit and Method Tabs —, onShowCommandPalette, onShowOpenRecent,
+  onShowRootUnitSelection, onShowWelcome, onShowMethodSelection — ignored
+  unless a Unit Tab is active), handles the Method picked in the palette
+  (activates its Method Tab if already open, otherwise calls
+  `expandCallerGraph` and opens one; `[PROJECT_REPLACED]` and results that
+  arrive after another Project was loaded are dropped silently, other errors
+  alert), handles the Root Unit picked in the Command Palette
+  (activates its Unit Tab if already open, otherwise calls
   `expandFromRootUnit` and opens one — or alerts on failure, and drops the
   result if another Project was loaded meanwhile) and the Tab shortcuts on a capturing
   `window` `keydown` (`Cmd+W` on macOS / `Ctrl+W` on Linux closes the active
   Tab, `Ctrl+Tab` / `Ctrl+Shift+Tab` cycle; all ignored while the palette is
   open). No menu item or Command exists for these shortcuts.
-- `src/renderer/components/{Welcome,GraphView,CommandPalette,TabBar}.svelte`:
+- `src/renderer/components/{Welcome,GraphView,CallerGraphView,CommandPalette,TabBar}.svelte`:
   Svelte components for the welcome screen, dependency graph visualization
   (via `vis-network`; receives its `graph` as a prop and renders it on
-  mount), the command palette (search/pick UI with three modes: Command list,
-  Abrir recente, and Selecionar Unit — always closable; see capabilities for
-  details) and the Tab bar (single row, horizontal scroll, `×` hidden when
-  the Tab can't be closed, Graph Tab tooltip = `.pas` path).
+  mount), the Caller Graph of a Method Tab (`services/callerGraphRenderer.js`:
+  hierarchical `DU` layout with levels from `assignCallerLevels`, no
+  physics, no View Filter, no click actions; groups `target`/`block`/
+  `entryPoint`/`method`, dashed and curved back-edges, purple Polymorphic
+  Calls with a `via …` tooltip; plus a banner listing `skippedUnits`), the
+  command palette (search/pick UI with four modes: Command list, Abrir
+  recente, Selecionar Unit and Selecionar Método — the latter shows
+  `Analisando Project…` while `listUnitMethods` is pending and drops
+  responses that arrive out of context; always closable; see capabilities
+  for details) and the Tab bar (single row, horizontal scroll, `×` hidden
+  when the Tab can't be closed, Unit Tab tooltip = `.pas` path, Method Tab
+  tooltip = `Unit — .pas path`).
 - `src/renderer/stores/{project,tabs}.js`: reactive state (Svelte stores):
   `project.js` holds the loaded project; `tabs.js` holds the open Tabs, the
   active one and the activation order, applying the pure rules from
   `src/domain/tabs/`.
-- `src/domain/tabs/`: pure Tab rules — `initialTabsState`, `graphTabId`
-  (`graph:` + the lowercased unit name, same as `expandDependencyGraph`'s
-  `rootUnitId`), `openWelcomeTab`, `openGraphTab` (activates instead of
+- `src/domain/tabs/`: pure Tab rules (kinds `welcome`, `unit`, `method`) —
+  `initialTabsState`, `methodTabId` (`method:` + the Method id), `openMethodTab`, `unitTabId`
+  (`unit:` + the lowercased unit name, same as `expandDependencyGraph`'s
+  `rootUnitId`), `openWelcomeTab`, `openUnitTab` (activates instead of
   duplicating), `activateTab`, `closeTab` (activates the most recently used
   Tab; closing the last one reopens the Welcome Tab), `canCloseTab` (false
-  only for a lone Welcome Tab), `closeGraphTabs` and `nextTab`/`previousTab`.
+  only for a lone Welcome Tab), `closeProjectTabs` (Unit and Method Tabs)
+  and `nextTab`/`previousTab`.
+- `src/domain/{search,methodSelection,ipcErrors,callerLevels}/`:
+  `normalizeForSearch`/`matchesSearch` (case- and accent-insensitive,
+  shared by the palette filters), `filterMethods`, `ipcErrorCode` (extracts
+  the `[CODE]` from an IPC error message) and `assignCallerLevels` (layer of
+  each Caller Graph node: longest path to the Target Method, ignoring
+  back-edges and self-loops).
+- `src/domain/pascalParser/`: hand-written Delphi parser (ADR 0006) —
+  `preprocess.js` (`{$IFDEF}`/`{$IF}` with a fixed set of default symbols,
+  keeping line/column), `lexer.js` (tokens with line/column; comments and
+  strings never yield identifiers) and `parser.js` (`parseSource` → Unit or
+  Program AST; failures are `ParseError` with line/column).
+- `src/domain/methods/`: `listUnitMethods(ast)` (routines with a body in the
+  `implementation`, overloads merged, nested routines excluded) and the id
+  format — `unit:<unit>|<class>|<name>` (lowercased), `program:<project>`,
+  `init:<unit>`, `final:<unit>`.
+- `src/domain/callIndex/`: `buildCallIndex({ dprPath, projectUnits,
+  readFile })` — async, yields between Units, never reads External Units.
+  `symbols.js` is the declarations pass (symbol table, inheritance,
+  generics, `resolveType`), `resolver.js` walks bodies resolving each
+  receiver's type and reports direct calls, Polymorphic Calls (virtual and
+  interface) and references (Entry Points); unresolved receivers produce
+  nothing. `rtlStubs.js` holds Pascal stubs for the RTL containers, `dfm.js`
+  reads text forms (handlers of ancestor forms apply to inherited forms).
+- `src/domain/expandCallerGraph/`: pure DFS from a Target Method over the
+  index (one node per Method/block, self-loops, back-edges, direct edge wins
+  over polymorphic, deterministic order).
 - `src/domain/commands/`: the Command catalog (`COMMANDS`: `openProject`,
-  `openRecent`, `selectUnit`, `showWelcome`) plus the pure `availableCommands`
-  (`selectUnit` needs a Project), `filterCommands` (case- and
+  `openRecent`, `selectUnit`, `selectMethod`, `showWelcome`) plus the pure
+  `availableCommands(commands, { hasProject, activeTabKind })` (`selectUnit`
+  needs a Project, `selectMethod` a Unit Tab), `filterCommands` (case- and
   accent-insensitive substring) and `shortcutHint`.
 
 **Process boundaries**: `contextIsolation: true` / `nodeIntegration: false` on
 the `BrowserWindow` (`src/main/index.js`). The renderer never `require()`s
 anything directly — `src/preload/api.js` exposes a narrow API on
 `window.pascalDependencyViewer`: `openProject()`, `expandFromRootUnit(args)`,
-`listRecentProjects()`, `openRecentProject(path)` and `runCommand(id)` (all
-`ipcRenderer.invoke`), plus `onProjectLoaded(cb)`,
+`listRecentProjects()`, `openRecentProject(path)`, `runCommand(id)`,
+`listUnitMethods(unitName)` and `expandCallerGraph(methodId)` (all
+`ipcRenderer.invoke`), `setActiveTabKind(kind)` (`ipcRenderer.send` on
+`tabs:active-kind`), plus `onProjectLoaded(cb)`, `onShowMethodSelection(cb)`,
 `onShowRootUnitSelection(cb)`, `onShowOpenRecent(cb)`,
 `onShowCommandPalette(cb)` and `onShowWelcome(cb)` listeners.
 
@@ -150,21 +215,22 @@ anything directly — `src/preload/api.js` exposes a narrow API on
    (so everything after step 2 is shared). If the file can't be read, it
    shows an error box, removes the entry from the persisted list and pushes
    nothing. The list isn't checked for missing files when the overlay opens.
-3. Picking a Root Unit that has no Graph Tab yet calls `expandFromRootUnit`
-   over IPC (one that already has a Graph Tab just activates it, with no
+3. Picking a Root Unit that has no Unit Tab yet calls `expandFromRootUnit`
+   over IPC (one that already has a Unit Tab just activates it, with no
    IPC)
    (`main/ipc/graph.js`'s `ipcMain.handle('expandFromRootUnit', ...)` →
    `performExpandFromRootUnit`), which reads the needed `.pas` files from
    disk in the **main** process (not the renderer) and runs
    `expandDependencyGraph`.
-4. The renderer opens a new Graph Tab at the end of the Tab bar, and its
+4. The renderer opens a new Unit Tab at the end of the Tab bar, and its
    `GraphView` draws `{ nodes, edges }` with `vis-network`'s `Network` — no
    page reload involved; the same renderer session reacts to each IPC push.
-   `app:project-loaded` closes every Graph Tab (and activates the Welcome
+   `app:project-loaded` closes every Unit Tab (and activates the Welcome
    Tab, reopening it if needed).
 5. `Edição > Selecionar Unit`'s `click` handler (`main/menu.js`) just sends
    `mainWindow.webContents.send('app:show-root-unit-selection')`, with no
-   payload — the main process holds no Project state. The renderer
+   payload — the renderer, not the main process, owns the Project's Unit list
+   (the main only caches the call index, see `callIndexCache`). The renderer
    (`App.svelte`) keeps the last `{ projectUnits, projectDir }` received via
    `onProjectLoaded` in `projectStore`, and opens the Command Palette's
    `Selecionar Unit` mode with it (`enterRootUnitMode(projectUnits,
@@ -172,18 +238,21 @@ anything directly — `src/preload/api.js` exposes a narrow API on
    Project has been opened yet in the session, the click is a no-op.
    `app:project-loaded` also opens this same mode automatically. The mode is
    always closable (`Esc`/click outside); the user then stays on the Welcome
-   Tab with the Project loaded. `Edição > Selecionar Método` just shows a
-   `dialog.showMessageBox` placeholder alert — no IPC, no renderer state
-   change.
+   Tab with the Project loaded. `Edição > Selecionar Método` (enabled only
+   with a Unit Tab active) goes through `runCommand('selectMethod')` →
+   `app:show-method-selection`, and the renderer opens the palette's
+   `Selecionar Método` mode (`entry: 'direct'`) for the active Unit Tab's
+   Root Unit.
 6. `Ferramentas > Paleta de Comandos` (shortcut `CmdOrCtrl+P`) sends
    `app:show-command-palette`, and the renderer opens the Command Palette in
    its Command list mode. The list is `availableCommands(COMMANDS, {
-   hasProject })` (so `Selecionar Unit` only shows up once a Project has been
-   loaded in the session) filtered by `filterCommands`, with the shortcut
+   hasProject, activeTabKind })` (so `Selecionar Unit` only shows up once a
+   Project has been loaded in the session, and `Selecionar Método` only with a
+   Unit Tab active) filtered by `filterCommands`, with the shortcut
    hint on each row. Choosing a Command closes the palette and calls
    `runCommand(id)` over `commands:run` (the same `runCommand` the menu
    uses — `Bem-vindo` included, which comes back as `app:show-welcome`),
-   except `Abrir recente` and `Selecionar Unit`, which switch the
+   except `Abrir recente`, `Selecionar Unit` and `Selecionar Método`, which switch the
    palette to their own mode without any IPC and without closing it —
    `Selecionar Unit` reads the current Project straight from the renderer's
    own state via `getProject()` (see step 5) instead of round-tripping
@@ -229,7 +298,7 @@ A partir da branch `feat/svelte`, o projeto integra **Svelte** como framework UI
 
 - **Vite**: `vite.renderer.config.mjs` inclui `vite-plugin-svelte`
 - **TypeScript**: Componentes Svelte usam `<script lang="ts">` (opcional, gradual). `src/renderer/services/` e stores têm tipos TypeScript. Código vanilla permanece em JavaScript puro.
-- **Testing**: Vitest + `@testing-library/svelte` para testes de componentes Svelte. Jest continua para `src/domain/`. `npm test` roda ambos.
+- **Testing**: Vitest + `@testing-library/svelte` para testes de componentes Svelte. Os testes de `src/domain/` e de `src/main/` também rodam no Vitest (`vi.fn`, `vi.doMock`); `npm test` roda tudo.
 - **CSS**: Svelte `<style>` scoped (encapsulado por componente, padrão Svelte). Nenhuma dependência CSS global nova.
 
 ### Migração Gradual
@@ -248,7 +317,9 @@ Após cada migração, o componente vanilla é deletado, a pasta não muda de es
 
 ## Notes
 
-- Parsing is regex-based; `selectUsesFromSource` always extracts both the
+- The Dependency Graph's parsing is regex-based (the Caller Graph uses the
+  hand-written parser in `src/domain/pascalParser/`, ADR 0006);
+  `selectUsesFromSource` always extracts both the
   `interface` and `implementation` `uses` clauses, tagging each unit with
   its Uses Clause Origin. There is no handling for a missing `unit`/`uses`
   clause — `.match(...)[0]` will throw on no match.

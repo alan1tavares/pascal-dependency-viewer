@@ -2,21 +2,25 @@
   import { onMount } from 'svelte'
   import Welcome from './Welcome.svelte'
   import GraphView from './GraphView.svelte'
+  import CallerGraphView from './CallerGraphView.svelte'
   import TabBar from './TabBar.svelte'
   import { projectStore } from '../stores/project.js'
   import {
     tabsStore,
     activate,
     close,
-    closeAllGraphTabs,
+    closeAllProjectTabs,
     openGraph,
+    openMethod,
     showNextTab,
     showPreviousTab,
     showWelcome,
   } from '../stores/tabs.js'
-  import { graphTabId } from '../../domain/tabs/index.js'
+  import { methodTabId, unitTabId } from '../../domain/tabs/index.js'
+  import { ipcErrorCode } from '../../domain/ipcErrors/index.js'
   import {
     configureCommandPalette,
+    enterMethodMode,
     enterRootUnitMode,
     isCommandPaletteOpen,
     showCommandPalette,
@@ -27,7 +31,7 @@
   const isMac = api.platform === 'darwin'
 
   async function openRootUnit(projectUnit) {
-    const id = graphTabId(projectUnit.unitName)
+    const id = unitTabId(projectUnit.unitName)
     if ($tabsStore.tabs.some((tab) => tab.id === id)) {
       activate(id)
       return
@@ -49,6 +53,39 @@
     openGraph({ unitName: projectUnit.unitName, path: projectUnit.path, graph })
   }
 
+  let activeTab = $derived($tabsStore.tabs.find((tab) => tab.id === $tabsStore.activeId))
+
+  // O menu nativo habilita `Selecionar Método` só com uma Unit Tab ativa.
+  $effect(() => {
+    api.setActiveTabKind(activeTab ? activeTab.kind : 'welcome')
+  })
+
+  // Root Unit da Unit Tab ativa, ou null.
+  function activeUnit() {
+    const tab = $tabsStore.tabs.find((t) => t.id === $tabsStore.activeId)
+    return tab && tab.kind === 'unit' ? { unitName: tab.title, path: tab.path } : null
+  }
+
+  async function openTargetMethod(method, unit) {
+    const id = methodTabId(method.id)
+    if ($tabsStore.tabs.some((tab) => tab.id === id)) {
+      activate(id)
+      return
+    }
+    const project = $projectStore
+    let graph
+    try {
+      graph = await api.expandCallerGraph(method.id)
+    } catch (error) {
+      // Outro Project foi carregado: as Tabs dele já foram fechadas.
+      if (ipcErrorCode(error) === 'PROJECT_REPLACED') return
+      window.alert(`Não foi possível gerar o grafo de ${method.label}: ${error.message}`)
+      return
+    }
+    if ($projectStore !== project) return
+    openMethod({ methodId: method.id, label: method.label, unitName: unit.unitName, unitPath: unit.path, graph })
+  }
+
   function handleKeydown(event) {
     if (isCommandPaletteOpen()) return
     const closeModifier = isMac ? event.metaKey : event.ctrlKey
@@ -66,12 +103,15 @@
     configureCommandPalette({
       hasProject: () => $projectStore !== null,
       getProject: () => $projectStore,
+      getActiveTabKind: () => activeTab?.kind ?? 'welcome',
+      getActiveUnit: activeUnit,
       onRootUnitSelected: openRootUnit,
+      onMethodSelected: openTargetMethod,
     })
 
     api.onProjectLoaded((project) => {
       projectStore.set(project)
-      closeAllGraphTabs()
+      closeAllProjectTabs()
       enterRootUnitMode(project.projectUnits, project.projectDir, { entry: 'direct' })
     })
 
@@ -94,6 +134,12 @@
       showWelcome()
     })
 
+    api.onShowMethodSelection(() => {
+      // Pode chegar depois de a Tab ativa ter deixado de ser uma Unit Tab.
+      const unit = activeUnit()
+      if (unit) enterMethodMode(unit, { entry: 'direct' })
+    })
+
     window.addEventListener('keydown', handleKeydown, true)
     return () => window.removeEventListener('keydown', handleKeydown, true)
   })
@@ -107,6 +153,8 @@
       <div class="tab-panel {active ? 'active' : ''}" inert={!active} aria-hidden={!active}>
         {#if tab.kind === 'welcome'}
           <Welcome />
+        {:else if tab.kind === 'method'}
+          <CallerGraphView graph={tab.graph} />
         {:else}
           <GraphView graph={tab.graph} />
         {/if}

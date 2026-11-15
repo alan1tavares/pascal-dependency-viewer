@@ -4,11 +4,15 @@ import path from "node:path";
 import parseDprSource from "../../domain/parseDprSource/index.js";
 import { readFile } from "../services/fileSystem.js";
 import * as recentProjects from "../services/recentProjects.js";
+import { callIndexCache } from "../services/callIndexCache.js";
 
 export function loadProject(filePath) {
   const source = readFile(filePath);
   const projectUnits = parseDprSource(source);
   const projectDir = path.dirname(filePath);
+  // Só depois do parse dar certo: um .dpr inválido não troca o Project do
+  // índice de chamadas (ADR 0007).
+  callIndexCache.setProject({ dprPath: filePath, projectDir, projectUnits });
   recentProjects.add(filePath);
   return { projectUnits, projectDir };
 }

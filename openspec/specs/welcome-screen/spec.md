@@ -11,7 +11,7 @@ Define o conteúdo da tela de Bem-vindo, exibida na Welcome Tab (capability
 O conteúdo da Welcome Tab (capability `tabs`) SHALL ser a tela de
 Bem-vindo, exibida em um de dois estados, conforme haja ou não um Project
 carregado na sessão — independentemente de algum Dependency Graph já ter
-sido renderizado ou de haver Graph Tabs abertas:
+sido renderizado ou de haver Unit Tabs abertas:
 - **Sem Projeto aberto**: mensagem de boas-vindas, descrição do app e um
   botão para abrir um Projeto (`.dpr`).
 - **Projeto aberto**: confirmação de que o Projeto foi carregado (caminho
@@ -29,7 +29,7 @@ sido renderizado ou de haver Graph Tabs abertas:
   Bem-vindo
 
 #### Scenario: Welcome Tab ativada depois de um grafo renderizado
-- **WHEN** um Projeto está carregado, a Graph Tab `UnitA` está aberta e o
+- **WHEN** um Projeto está carregado, a Unit Tab `UnitA` está aberta e o
   usuário ativa a Welcome Tab
 - **THEN** a Welcome Tab exibe o estado "Projeto aberto" da tela de
   Bem-vindo, com o caminho do diretório desse Projeto
