@@ -8,13 +8,13 @@
     tabsStore,
     activate,
     close,
-    closeAllGraphTabs,
+    closeAllUnitTabs,
     openGraph,
     showNextTab,
     showPreviousTab,
     showWelcome,
   } from '../stores/tabs.js'
-  import { graphTabId } from '../../domain/tabs/index.js'
+  import { unitTabId } from '../../domain/tabs/index.js'
   import {
     configureCommandPalette,
     enterRootUnitMode,
@@ -27,7 +27,7 @@
   const isMac = api.platform === 'darwin'
 
   async function openRootUnit(projectUnit) {
-    const id = graphTabId(projectUnit.unitName)
+    const id = unitTabId(projectUnit.unitName)
     if ($tabsStore.tabs.some((tab) => tab.id === id)) {
       activate(id)
       return
@@ -71,7 +71,7 @@
 
     api.onProjectLoaded((project) => {
       projectStore.set(project)
-      closeAllGraphTabs()
+      closeAllUnitTabs()
       enterRootUnitMode(project.projectUnits, project.projectDir, { entry: 'direct' })
     })
 

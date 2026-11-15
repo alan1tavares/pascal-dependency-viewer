@@ -159,7 +159,7 @@ paleta para o modo correspondente sem fechá-la.
   com o prefixo fixo `Abrir recente` e a lista de Recent Projects
 
 #### Scenario: Executar "Bem-vindo" pela paleta
-- **WHEN** a Welcome Tab foi fechada, a Graph Tab `UnitA` está ativa e o
+- **WHEN** a Welcome Tab foi fechada, a Unit Tab `UnitA` está ativa e o
   usuário escolhe `Bem-vindo` na paleta
 - **THEN** a paleta é fechada e a Welcome Tab é aberta no fim da barra e
   fica ativa
@@ -184,7 +184,7 @@ nas outras duas entradas. O clique fora do card, nas três entradas, SHALL
 fechar a paleta inteira, sem voltar à lista de Commands.
 
 Escolher uma Project Unit nesse modo SHALL fechar a paleta e exibir o
-grafo dessa Root Unit numa Graph Tab, como definido na capability
+grafo dessa Root Unit numa Unit Tab, como definido na capability
 `root-unit-selection`.
 
 #### Scenario: Modo Selecionar Unit exibido ao carregar um Project
@@ -214,7 +214,7 @@ grafo dessa Root Unit numa Graph Tab, como definido na capability
 
 #### Scenario: Escolher uma Project Unit no modo Selecionar Unit
 - **WHEN** o usuário escolhe `UnitB` no modo `Selecionar Unit`
-- **THEN** a paleta fecha e o grafo de `UnitB` é exibido na Graph Tab
+- **THEN** a paleta fecha e o grafo de `UnitB` é exibido na Unit Tab
   `UnitB`, que fica ativa
 
 ### Requirement: Modo "Abrir recente" na Command Palette

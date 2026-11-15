@@ -5,7 +5,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // `PLAYWRIGHT_WORKERS` limita o paralelismo em máquinas com pouco recurso
+  // (ex.: sandbox), onde vários workers contra um único Vite derrubam a suíte.
+  workers: process.env.CI ? 1 : Number(process.env.PLAYWRIGHT_WORKERS) || undefined,
   reporter: 'html',
   use: {
     baseURL: 'http://localhost:5199',

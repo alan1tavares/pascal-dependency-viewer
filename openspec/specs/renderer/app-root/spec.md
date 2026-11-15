@@ -1,7 +1,7 @@
 # renderer/app-root Specification
 
 ## Purpose
-O componente raiz (App.svelte) orquestra todos os sub-componentes Svelte (TabBar, Welcome, uma GraphView por Graph Tab e CommandPalette), centraliza listeners IPC do main process e mantém o estado das Tabs abertas.
+O componente raiz (App.svelte) orquestra todos os sub-componentes Svelte (TabBar, Welcome, uma GraphView por Unit Tab e CommandPalette), centraliza listeners IPC do main process e mantém o estado das Tabs abertas.
 
 ## Requirements
 
@@ -11,7 +11,7 @@ O App SHALL registrar e gerenciar todos os listeners IPC (onProjectLoaded, onSho
 
 #### Scenario: Listener onProjectLoaded
 - **WHEN** main process dispara `webContents.send('app:project-loaded', { projectUnits, projectDir })`
-- **THEN** App atualiza `projectStore`, fecha todas as Graph Tabs, ativa a Welcome Tab (abrindo-a se estava fechada) e abre CommandPalette no modo Root Unit Selection
+- **THEN** App atualiza `projectStore`, fecha todas as Unit Tabs, ativa a Welcome Tab (abrindo-a se estava fechada) e abre CommandPalette no modo Root Unit Selection
 
 #### Scenario: Listener onShowCommandPalette
 - **WHEN** main process dispara `webContents.send('app:show-command-palette')`
@@ -44,7 +44,7 @@ O App SHALL ser uma caixa preta opaca — index.js apenas monta o componente, se
 ### Requirement: App renderiza a barra de Tabs e o conteúdo de cada Tab
 O App SHALL renderizar a barra de Tabs e, abaixo dela, o conteúdo de todas
 as Tabs abertas: o Welcome para a Welcome Tab e uma instância própria de
-GraphView para cada Graph Tab. Só o conteúdo da Tab ativa SHALL ficar
+GraphView para cada Unit Tab. Só o conteúdo da Tab ativa SHALL ficar
 visível e interativo; os demais SHALL continuar montados, preservando seu
 estado. CommandPalette SHALL sempre estar renderizado como overlay.
 
@@ -53,8 +53,8 @@ estado. CommandPalette SHALL sempre estar renderizado como overlay.
 - **THEN** a barra de Tabs exibe só a Welcome Tab, ativa, e o Welcome é o
   único conteúdo visível
 
-#### Scenario: Uma GraphView por Graph Tab
-- **WHEN** as Graph Tabs `UnitA` e `UnitB` estão abertas e `UnitB` está ativa
+#### Scenario: Uma GraphView por Unit Tab
+- **WHEN** as Unit Tabs `UnitA` e `UnitB` estão abertas e `UnitB` está ativa
 - **THEN** existem duas instâncias de GraphView montadas, só a de `UnitB` é
   visível, e a de `UnitA` mantém seu estado sem ser desmontada
 
@@ -70,7 +70,7 @@ listeners IPC. O main process SHALL não guardar estado de Tabs.
 
 #### Scenario: Escolha de Root Unit atualiza a store
 - **WHEN** o usuário escolhe a Root Unit `UnitA` no modo `Selecionar Unit`
-- **THEN** a store de Tabs passa a conter a Graph Tab `UnitA`, ativa, e a
+- **THEN** a store de Tabs passa a conter a Unit Tab `UnitA`, ativa, e a
   barra de Tabs reflete a mudança
 
 ### Requirement: Atalhos de teclado das Tabs tratados no renderer
@@ -79,6 +79,6 @@ e `Ctrl+Shift+Tab` (capability `tabs`), sem passar pelo main process, e
 SHALL impedir o comportamento padrão dessas teclas quando as tratar.
 
 #### Scenario: Cmd/Ctrl+W tratado no renderer
-- **WHEN** a Graph Tab `UnitA` está ativa, a Command Palette está fechada e
+- **WHEN** a Unit Tab `UnitA` está ativa, a Command Palette está fechada e
   o usuário pressiona `Cmd/Ctrl+W`
 - **THEN** o App fecha a Tab `UnitA` sem nenhuma chamada IPC

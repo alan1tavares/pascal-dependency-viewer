@@ -46,7 +46,7 @@ test('Cmd/Ctrl+P troca para a lista de Commands a partir do Selecionar Unit auto
   await expect(page.locator('#commandPaletteList')).toContainText('Bem-vindo')
 })
 
-test('cada Root Unit abre uma Graph Tab no fim da barra; repetir só ativa', async ({ page }) => {
+test('cada Root Unit abre uma Unit Tab no fim da barra; repetir só ativa', async ({ page }) => {
   await loadProject(page)
   await pickRootUnit(page, 'UnitA')
   await expect(activeTab(page)).toHaveText('UnitA')
@@ -61,7 +61,7 @@ test('cada Root Unit abre uma Graph Tab no fim da barra; repetir só ativa', asy
   expect(await expandCalls(page)).toBe(2)
 })
 
-test('cada Graph Tab mantém seu próprio View Filter', async ({ page }) => {
+test('cada Unit Tab mantém seu próprio View Filter', async ({ page }) => {
   await loadProject(page)
   await pickRootUnit(page, 'UnitA')
   await expect(activeTab(page)).toHaveText('UnitA')
@@ -143,7 +143,7 @@ test('Bem-vindo reabre a Welcome Tab no fim da barra, ou só a ativa', async ({ 
   await expect(activeTab(page)).toHaveText('Bem-vindo')
 })
 
-test('carregar um Project fecha as Graph Tabs e ativa a Welcome Tab', async ({ page }) => {
+test('carregar um Project fecha as Unit Tabs e ativa a Welcome Tab', async ({ page }) => {
   await loadProject(page)
   await pickRootUnit(page, 'UnitA')
   await openRootUnit(page, 'UnitB')
@@ -177,7 +177,7 @@ test('a barra rola na horizontal até a Tab ativa quando há muitas Tabs', async
   await expect(tab(page, 'Bem-vindo')).toBeInViewport({ ratio: 0.9 })
 })
 
-test('Graph Tab inativa preenche a área ao ser ativada depois de redimensionar a janela', async ({ page }) => {
+test('Unit Tab inativa preenche a área ao ser ativada depois de redimensionar a janela', async ({ page }) => {
   await loadProject(page)
   await pickRootUnit(page, 'UnitA')
   await openRootUnit(page, 'UnitB')
@@ -192,7 +192,7 @@ test('Graph Tab inativa preenche a área ao ser ativada depois de redimensionar 
   expect(canvasHeight).toBe(contentHeight)
 })
 
-test('voltar a uma Graph Tab mantém zoom e posições do grafo', async ({ page }) => {
+test('voltar a uma Unit Tab mantém zoom e posições do grafo', async ({ page }) => {
   test.slow()
   await loadProject(page)
   await pickRootUnit(page, 'UnitA')
@@ -207,7 +207,7 @@ test('voltar a uma Graph Tab mantém zoom e posições do grafo', async ({ page 
     stable = first === (await snapshot())
   }
   // Às vezes a física da vis-network não para (acontece também na `main`, com
-  // uma Graph Tab só); sem grafo parado não há como comparar o canvas.
+  // uma Unit Tab só); sem grafo parado não há como comparar o canvas.
   test.skip(!stable, 'a física da vis-network não estabilizou')
 
   const settled = await snapshot()
@@ -226,7 +226,7 @@ test('voltar a uma Graph Tab mantém zoom e posições do grafo', async ({ page 
   expect(await snapshot()).toBe(zoomed)
 })
 
-test('reabrir uma Root Unit depois de fechar sua Graph Tab volta o View Filter ao padrão', async ({ page }) => {
+test('reabrir uma Root Unit depois de fechar sua Unit Tab volta o View Filter ao padrão', async ({ page }) => {
   await loadProject(page)
   await pickRootUnit(page, 'UnitA')
   await expect(activeTab(page)).toHaveText('UnitA')
@@ -239,7 +239,7 @@ test('reabrir uma Root Unit depois de fechar sua Graph Tab volta o View Filter a
   await expect(page.locator('.tab-panel.active .viewFilterExternal')).not.toBeChecked()
 })
 
-test('grafo que chega depois de outro Project ser carregado não abre Graph Tab', async ({ page }) => {
+test('grafo que chega depois de outro Project ser carregado não abre Unit Tab', async ({ page }) => {
   await loadProject(page)
   await page.evaluate(() => {
     const w = window as any
@@ -256,7 +256,7 @@ test('grafo que chega depois de outro Project ser carregado não abre Graph Tab'
   await expect(activeTab(page)).toHaveText('Bem-vindo')
 })
 
-test('falha ao gerar o grafo avisa o usuário e não abre Graph Tab', async ({ page }) => {
+test('falha ao gerar o grafo avisa o usuário e não abre Unit Tab', async ({ page }) => {
   await loadProject(page)
   await page.evaluate(() => { (window as any).__expandFail = 'UnitA' })
   const dialog = page.waitForEvent('dialog')

@@ -3,7 +3,7 @@
 ## Purpose
 
 Organiza a área principal da janela em Tabs no estilo das abas de editor do
-VSCode: uma Welcome Tab e uma Graph Tab por Root Unit, com uma única Tab
+VSCode: uma Welcome Tab e uma Unit Tab por Root Unit, com uma única Tab
 ativa por vez.
 
 ## Requirements
@@ -21,7 +21,7 @@ destacada na barra. Clicar numa aba SHALL ativar a Tab correspondente.
   destacada
 
 #### Scenario: Ativar uma Tab pelo clique
-- **WHEN** existem as Graph Tabs `UnitA` (ativa) e `UnitB`, e o usuário
+- **WHEN** existem as Unit Tabs `UnitA` (ativa) e `UnitB`, e o usuário
   clica na aba `UnitB`
 - **THEN** `UnitB` passa a ser a Tab ativa, seu grafo é exibido e o grafo
   de `UnitA` deixa de ser exibido
@@ -34,7 +34,7 @@ ilegíveis. Ativar uma Tab cuja aba esteja fora da área visível da barra
 SHALL rolar a barra até ela.
 
 #### Scenario: Muitas Tabs abertas
-- **WHEN** há mais Graph Tabs abertas do que cabem na largura da janela
+- **WHEN** há mais Unit Tabs abertas do que cabem na largura da janela
 - **THEN** a barra continua numa única linha e pode ser rolada na
   horizontal para mostrar as abas restantes
 
@@ -52,16 +52,16 @@ título SHALL ser `Bem-vindo`. Existe no máximo uma Welcome Tab aberta.
 - **THEN** a única Tab aberta é a Welcome Tab, com o título `Bem-vindo`, e
   ela está ativa
 
-### Requirement: Escolher uma Root Unit abre uma Graph Tab
-Quando o usuário escolhe uma Root Unit que ainda não tem Graph Tab aberta,
-o sistema SHALL abrir uma nova Graph Tab com o Dependency Graph dessa Root
+### Requirement: Escolher uma Root Unit abre uma Unit Tab
+Quando o usuário escolhe uma Root Unit que ainda não tem Unit Tab aberta,
+o sistema SHALL abrir uma nova Unit Tab com o Dependency Graph dessa Root
 Unit, colocá-la no fim da barra e ativá-la. As demais Tabs abertas,
 incluindo a Welcome Tab, SHALL continuar abertas.
 
 #### Scenario: Primeira Root Unit escolhida
 - **WHEN** um Project está carregado, só a Welcome Tab está aberta e o
   usuário escolhe a Root Unit `UnitA`
-- **THEN** a barra exibe `Bem-vindo` e `UnitA`, nessa ordem, e a Graph Tab
+- **THEN** a barra exibe `Bem-vindo` e `UnitA`, nessa ordem, e a Unit Tab
   `UnitA` está ativa, mostrando o grafo de `UnitA`
 
 #### Scenario: Segunda Root Unit escolhida
@@ -70,20 +70,20 @@ incluindo a Welcome Tab, SHALL continuar abertas.
 - **THEN** a barra exibe `Bem-vindo`, `UnitA` e `UnitB`, nessa ordem, e
   `UnitB` está ativa
 
-### Requirement: Root Unit que já tem Graph Tab apenas a ativa
-Uma Graph Tab SHALL ser identificada pela sua Root Unit. Quando o usuário
-escolhe uma Root Unit que já tem Graph Tab aberta, o sistema SHALL ativar
-essa Graph Tab, sem abrir outra e sem recalcular o Dependency Graph. A Tab
+### Requirement: Root Unit que já tem Unit Tab apenas a ativa
+Uma Unit Tab SHALL ser identificada pela sua Root Unit. Quando o usuário
+escolhe uma Root Unit que já tem Unit Tab aberta, o sistema SHALL ativar
+essa Unit Tab, sem abrir outra e sem recalcular o Dependency Graph. A Tab
 SHALL manter sua posição na barra e seu estado de exibição.
 
 #### Scenario: Escolher de novo uma Root Unit já aberta
-- **WHEN** as Graph Tabs `UnitA` e `UnitB` estão abertas, `UnitB` está
+- **WHEN** as Unit Tabs `UnitA` e `UnitB` estão abertas, `UnitB` está
   ativa, e o usuário escolhe `UnitA` em `Selecionar Unit`
 - **THEN** `UnitA` passa a ser a Tab ativa, a barra continua com uma única
   aba `UnitA`, na mesma posição, e o grafo dela não é lido de novo do disco
 
-### Requirement: Título e tooltip da Graph Tab
-O título da aba de uma Graph Tab SHALL ser o nome da Root Unit, com a
+### Requirement: Título e tooltip da Unit Tab
+O título da aba de uma Unit Tab SHALL ser o nome da Root Unit, com a
 capitalização declarada no Project. Ao passar o cursor sobre a aba, o
 sistema SHALL exibir como tooltip o caminho do arquivo `.pas` da Root Unit,
 como declarado no `.dpr`.
@@ -91,18 +91,18 @@ como declarado no `.dpr`.
 #### Scenario: Título e tooltip
 - **WHEN** a Root Unit escolhida é `UnitPrincipal`, declarada no `.dpr` como
   `UnitPrincipal in 'src\UnitPrincipal.pas'`
-- **THEN** a aba da Graph Tab exibe `UnitPrincipal` e o tooltip dela exibe
+- **THEN** a aba da Unit Tab exibe `UnitPrincipal` e o tooltip dela exibe
   `src\UnitPrincipal.pas`
 
-### Requirement: Graph Tab preserva seu estado de exibição
-Enquanto uma Graph Tab estiver aberta, o sistema SHALL preservar o seu
+### Requirement: Unit Tab preserva seu estado de exibição
+Enquanto uma Unit Tab estiver aberta, o sistema SHALL preservar o seu
 View Filter, a posição dos nós, o zoom e o enquadramento do grafo quando o
-usuário ativa outra Tab e depois volta a ela. Voltar a uma Graph Tab SHALL
+usuário ativa outra Tab e depois volta a ela. Voltar a uma Unit Tab SHALL
 não recalcular o Dependency Graph nem ler arquivos do disco.
 
-#### Scenario: Voltar a uma Graph Tab
-- **WHEN** na Graph Tab `UnitA` o usuário desmarca "Implementation", arrasta
-  um nó e dá zoom, ativa a Graph Tab `UnitB` e depois volta para `UnitA`
+#### Scenario: Voltar a uma Unit Tab
+- **WHEN** na Unit Tab `UnitA` o usuário desmarca "Implementation", arrasta
+  um nó e dá zoom, ativa a Unit Tab `UnitB` e depois volta para `UnitA`
 - **THEN** `UnitA` é exibida com "Implementation" desmarcada, o nó na
   posição para onde foi arrastado e o mesmo zoom e enquadramento, sem nova
   leitura de arquivos do disco
@@ -110,22 +110,22 @@ não recalcular o Dependency Graph nem ler arquivos do disco.
 ### Requirement: Fechar uma Tab
 Cada aba SHALL ter um botão "x" que fecha a Tab correspondente, e
 `Cmd+W` (macOS) / `Ctrl+W` (Linux) SHALL fechar a Tab ativa. Fechar uma
-Graph Tab SHALL descartar o estado de exibição dela. `Cmd/Ctrl+W` SHALL
+Unit Tab SHALL descartar o estado de exibição dela. `Cmd/Ctrl+W` SHALL
 nunca fechar a janela do app.
 
 #### Scenario: Fechar pelo "x"
-- **WHEN** as Graph Tabs `UnitA` e `UnitB` estão abertas e o usuário clica
+- **WHEN** as Unit Tabs `UnitA` e `UnitB` estão abertas e o usuário clica
   no "x" da aba `UnitA`
 - **THEN** a Tab `UnitA` é removida da barra e `UnitB` continua aberta
 
 #### Scenario: Fechar pelo atalho
-- **WHEN** a Graph Tab `UnitB` está ativa e o usuário pressiona `Cmd/Ctrl+W`
+- **WHEN** a Unit Tab `UnitB` está ativa e o usuário pressiona `Cmd/Ctrl+W`
 - **THEN** a Tab `UnitB` é fechada e a janela do app continua aberta
 
-#### Scenario: Reabrir uma Root Unit depois de fechar sua Graph Tab
-- **WHEN** o usuário fecha a Graph Tab `UnitA`, em que tinha alterado o
+#### Scenario: Reabrir uma Root Unit depois de fechar sua Unit Tab
+- **WHEN** o usuário fecha a Unit Tab `UnitA`, em que tinha alterado o
   View Filter, e depois escolhe `UnitA` de novo
-- **THEN** uma nova Graph Tab `UnitA` é aberta no fim da barra, com o View
+- **THEN** uma nova Unit Tab `UnitA` é aberta no fim da barra, com o View
   Filter no estado inicial
 
 ### Requirement: Tab ativada ao fechar a Tab ativa
@@ -144,12 +144,12 @@ ativa SHALL manter ativa a Tab que já estava.
 - **THEN** `UnitB` é fechada e `UnitA` continua ativa
 
 ### Requirement: Fechar a última Tab reabre a Welcome Tab
-Quando o usuário fecha a única Tab aberta e ela é uma Graph Tab, o sistema
+Quando o usuário fecha a única Tab aberta e ela é uma Unit Tab, o sistema
 SHALL abrir a Welcome Tab e ativá-la, de modo que a área principal nunca
 fique sem Tab.
 
-#### Scenario: Fechar a única Graph Tab
-- **WHEN** a Welcome Tab já foi fechada, só a Graph Tab `UnitA` está aberta
+#### Scenario: Fechar a única Unit Tab
+- **WHEN** a Welcome Tab já foi fechada, só a Unit Tab `UnitA` está aberta
   e o usuário a fecha
 - **THEN** a Welcome Tab é aberta e fica ativa
 
@@ -163,7 +163,7 @@ Tab SHALL poder ser fechada normalmente.
 - **THEN** sua aba não tem botão "x", e pressionar `Cmd/Ctrl+W` não muda
   nada
 
-#### Scenario: Welcome Tab com uma Graph Tab aberta
+#### Scenario: Welcome Tab com uma Unit Tab aberta
 - **WHEN** as Tabs `Bem-vindo` e `UnitA` estão abertas
 - **THEN** a aba `Bem-vindo` exibe o botão "x" e pode ser fechada
 
@@ -200,7 +200,7 @@ aberta, eles SHALL não ter efeito.
 - **THEN** nenhuma Tab é fechada ou ativada
 
 #### Scenario: Ações de Tab não aparecem na paleta
-- **WHEN** o usuário abre a Command Palette com Graph Tabs abertas
+- **WHEN** o usuário abre a Command Palette com Unit Tabs abertas
 - **THEN** a lista de Commands não contém nenhum Command para fechar ou
   alternar Tabs
 
@@ -210,7 +210,7 @@ Welcome Tab se ela estiver aberta, ou abri-la no fim da barra e ativá-la se
 tiver sido fechada.
 
 #### Scenario: Welcome Tab fechada
-- **WHEN** a Welcome Tab foi fechada, as Graph Tabs `UnitA` e `UnitB` estão
+- **WHEN** a Welcome Tab foi fechada, as Unit Tabs `UnitA` e `UnitB` estão
   abertas e o usuário aciona `Ajuda > Bem-vindo`
 - **THEN** a barra exibe `UnitA`, `UnitB` e `Bem-vindo`, nessa ordem, e
   `Bem-vindo` está ativa
@@ -221,28 +221,28 @@ tiver sido fechada.
 - **THEN** `Bem-vindo` passa a ser a Tab ativa e continua existindo uma
   única Welcome Tab
 
-### Requirement: Abrir um Project fecha as Graph Tabs
+### Requirement: Abrir um Project fecha as Unit Tabs
 Quando um Project é carregado — pelo diálogo nativo ou por `Abrir recente`,
 inclusive quando é o mesmo `.dpr` que já estava aberto —, o sistema SHALL
-fechar todas as Graph Tabs abertas. A Welcome Tab SHALL continuar aberta se
+fechar todas as Unit Tabs abertas. A Welcome Tab SHALL continuar aberta se
 estava, e SHALL ser aberta se não estava, e fica ativa nos dois casos.
 Cancelar o diálogo nativo ou falhar ao ler o Project SHALL não alterar as
 Tabs.
 
-#### Scenario: Abrir outro Project com Graph Tabs abertas
+#### Scenario: Abrir outro Project com Unit Tabs abertas
 - **WHEN** as Tabs `Bem-vindo`, `UnitA` e `UnitB` estão abertas e o usuário
   abre outro `.dpr`
 - **THEN** só a Welcome Tab continua aberta, ativa, e ela mostra o novo
   Project carregado
 
 #### Scenario: Reabrir o mesmo Project
-- **WHEN** a Welcome Tab foi fechada, a Graph Tab `UnitA` está aberta e o
+- **WHEN** a Welcome Tab foi fechada, a Unit Tab `UnitA` está aberta e o
   usuário reabre, por `Abrir recente`, o mesmo `.dpr` que já estava aberto
-- **THEN** a Graph Tab `UnitA` é fechada e a Welcome Tab é aberta e fica
+- **THEN** a Unit Tab `UnitA` é fechada e a Welcome Tab é aberta e fica
   ativa
 
 #### Scenario: Cancelar o diálogo de abrir Project
-- **WHEN** as Graph Tabs `UnitA` e `UnitB` estão abertas e o usuário abre o
+- **WHEN** as Unit Tabs `UnitA` e `UnitB` estão abertas e o usuário abre o
   diálogo de `Abrir projeto (.dpr)` e o cancela
 - **THEN** as Tabs abertas e a Tab ativa continuam as mesmas
 
@@ -250,7 +250,7 @@ Tabs.
 O sistema SHALL não guardar as Tabs abertas entre sessões do app: ao
 reiniciar, só a Welcome Tab é aberta.
 
-#### Scenario: Reiniciar o app com Graph Tabs abertas
-- **WHEN** o usuário fecha o app com as Graph Tabs `UnitA` e `UnitB` abertas
+#### Scenario: Reiniciar o app com Unit Tabs abertas
+- **WHEN** o usuário fecha o app com as Unit Tabs `UnitA` e `UnitB` abertas
   e o inicia de novo
 - **THEN** só a Welcome Tab está aberta

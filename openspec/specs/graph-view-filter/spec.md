@@ -10,17 +10,17 @@ no grafo já carregado — sem nova leitura de arquivos do disco.
 ## Requirements
 
 ### Requirement: Painel flutuante de View Filter sobre o grafo
-Sempre que uma Graph Tab está ativa, o sistema SHALL mostrar, sobre o grafo
+Sempre que uma Unit Tab está ativa, o sistema SHALL mostrar, sobre o grafo
 dela, um painel flutuante compacto, ancorado no canto superior direito da
 área do grafo (abaixo da barra de Tabs), contendo três checkboxes
 independentes rotulados "Interface", "Implementation" e "Unidades
 Externas". O painel SHALL permanecer visível sobre o grafo
 independentemente de pan, zoom ou redimensionamento da janela, e SHALL não
-ser exibido quando a Tab ativa não é uma Graph Tab.
+ser exibido quando a Tab ativa não é uma Unit Tab.
 
 #### Scenario: Painel aparece junto com o grafo
 - **WHEN** o usuário seleciona uma Root Unit e o grafo é renderizado na
-  nova Graph Tab
+  nova Unit Tab
 - **THEN** o painel de View Filter aparece no canto superior direito da
   área do grafo, abaixo da barra de Tabs, sobreposto ao grafo, com os três
   checkboxes visíveis
@@ -32,27 +32,27 @@ ser exibido quando a Tab ativa não é uma Graph Tab.
   direito, sem ser coberto nem se mover junto com o conteúdo do grafo
 
 #### Scenario: Painel não aparece na Welcome Tab
-- **WHEN** há Graph Tabs abertas e o usuário ativa a Welcome Tab
+- **WHEN** há Unit Tabs abertas e o usuário ativa a Welcome Tab
 - **THEN** nenhum painel de View Filter é exibido
 
 ### Requirement: Estado inicial do View Filter
-Ao abrir uma nova Graph Tab, os checkboxes "Interface" e "Implementation"
+Ao abrir uma nova Unit Tab, os checkboxes "Interface" e "Implementation"
 dela SHALL iniciar marcados, mostrando todas as Uses Clause Origins. O
 checkbox "External" SHALL iniciar desmarcado, ocultando as
 External Units do grafo já na primeira exibição. O estado do View Filter
-de outras Graph Tabs abertas SHALL não influenciar o estado inicial.
+de outras Unit Tabs abertas SHALL não influenciar o estado inicial.
 
 #### Scenario: Grafo exibido pela primeira vez
 - **WHEN** o usuário seleciona uma Root Unit e o grafo é exibido pela
-  primeira vez numa nova Graph Tab
+  primeira vez numa nova Unit Tab
 - **THEN** os checkboxes "Interface" e "Implementation" aparecem
   marcados, o checkbox "External" aparece desmarcado, e nenhuma
   External Unit é exibida no grafo inicial
 
-#### Scenario: Nova Graph Tab ignora o filtro das outras
-- **WHEN** na Graph Tab `UnitA` o usuário marcou "External" e
+#### Scenario: Nova Unit Tab ignora o filtro das outras
+- **WHEN** na Unit Tab `UnitA` o usuário marcou "External" e
   depois escolhe a Root Unit `UnitB`
-- **THEN** a nova Graph Tab `UnitB` abre com "External"
+- **THEN** a nova Unit Tab `UnitB` abre com "External"
   desmarcada
 
 ### Requirement: Pelo menos uma origem sempre marcada
@@ -148,19 +148,19 @@ com este filtro.
 - **THEN** a aresta `UnitA -> Vcl.Forms` continua oculta, pois o filtro
   de Uses Clause Origin ainda esconde arestas `implementation`
 
-### Requirement: View Filter independente por Graph Tab
-Cada Graph Tab (capability `tabs`) SHALL ter seu próprio View Filter. Mudar
-os checkboxes numa Graph Tab SHALL afetar só o grafo dessa Graph Tab, e o
+### Requirement: View Filter independente por Unit Tab
+Cada Unit Tab (capability `tabs`) SHALL ter seu próprio View Filter. Mudar
+os checkboxes numa Unit Tab SHALL afetar só o grafo dessa Unit Tab, e o
 estado escolhido SHALL ser mantido enquanto ela estiver aberta, mesmo
 quando outra Tab for ativada.
 
-#### Scenario: Filtro de uma Graph Tab não afeta a outra
-- **WHEN** as Graph Tabs `UnitA` e `UnitB` estão abertas e, na `UnitA`, o
+#### Scenario: Filtro de uma Unit Tab não afeta a outra
+- **WHEN** as Unit Tabs `UnitA` e `UnitB` estão abertas e, na `UnitA`, o
   usuário desmarca "Implementation"
 - **THEN** ao ativar `UnitB`, "Implementation" aparece marcada e as arestas
   de origem `implementation` de `UnitB` continuam visíveis
 
-#### Scenario: Filtro mantido ao voltar para a Graph Tab
-- **WHEN** na Graph Tab `UnitA` o usuário marca "External", ativa
+#### Scenario: Filtro mantido ao voltar para a Unit Tab
+- **WHEN** na Unit Tab `UnitA` o usuário marca "External", ativa
   outra Tab e volta para `UnitA`
 - **THEN** "External" continua marcada em `UnitA`

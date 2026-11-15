@@ -86,13 +86,13 @@ layout — plain JavaScript, no UI framework, no `shared/` — was chosen).
   `#app` in `index.html`.
 - `src/renderer/components/App.svelte`: root component. Renders the
   `TabBar` and, below it, one panel per open Tab (`Welcome` for the Welcome
-  Tab, its own `GraphView` for each Graph Tab). Every panel stays mounted;
+  Tab, its own `GraphView` for each Unit Tab). Every panel stays mounted;
   inactive ones are hidden with `visibility: hidden` + `inert`, so each
-  Graph Tab keeps its View Filter, node positions and zoom. Centralizes IPC
+  Unit Tab keeps its View Filter, node positions and zoom. Centralizes IPC
   listeners from `window.pascalDependencyViewer` (onProjectLoaded,
   onShowCommandPalette, onShowOpenRecent, onShowRootUnitSelection,
   onShowWelcome), handles the Root Unit picked in the Command Palette
-  (activates its Graph Tab if already open, otherwise calls
+  (activates its Unit Tab if already open, otherwise calls
   `expandFromRootUnit` and opens one — or alerts on failure, and drops the
   result if another Project was loaded meanwhile) and the Tab shortcuts on a capturing
   `window` `keydown` (`Cmd+W` on macOS / `Ctrl+W` on Linux closes the active
@@ -104,17 +104,17 @@ layout — plain JavaScript, no UI framework, no `shared/` — was chosen).
   mount), the command palette (search/pick UI with three modes: Command list,
   Abrir recente, and Selecionar Unit — always closable; see capabilities for
   details) and the Tab bar (single row, horizontal scroll, `×` hidden when
-  the Tab can't be closed, Graph Tab tooltip = `.pas` path).
+  the Tab can't be closed, Unit Tab tooltip = `.pas` path).
 - `src/renderer/stores/{project,tabs}.js`: reactive state (Svelte stores):
   `project.js` holds the loaded project; `tabs.js` holds the open Tabs, the
   active one and the activation order, applying the pure rules from
   `src/domain/tabs/`.
-- `src/domain/tabs/`: pure Tab rules — `initialTabsState`, `graphTabId`
-  (`graph:` + the lowercased unit name, same as `expandDependencyGraph`'s
-  `rootUnitId`), `openWelcomeTab`, `openGraphTab` (activates instead of
+- `src/domain/tabs/`: pure Tab rules — `initialTabsState`, `unitTabId`
+  (`unit:` + the lowercased unit name, same as `expandDependencyGraph`'s
+  `rootUnitId`), `openWelcomeTab`, `openUnitTab` (activates instead of
   duplicating), `activateTab`, `closeTab` (activates the most recently used
   Tab; closing the last one reopens the Welcome Tab), `canCloseTab` (false
-  only for a lone Welcome Tab), `closeGraphTabs` and `nextTab`/`previousTab`.
+  only for a lone Welcome Tab), `closeUnitTabs` and `nextTab`/`previousTab`.
 - `src/domain/commands/`: the Command catalog (`COMMANDS`: `openProject`,
   `openRecent`, `selectUnit`, `showWelcome`) plus the pure `availableCommands`
   (`selectUnit` needs a Project), `filterCommands` (case- and
@@ -150,17 +150,17 @@ anything directly — `src/preload/api.js` exposes a narrow API on
    (so everything after step 2 is shared). If the file can't be read, it
    shows an error box, removes the entry from the persisted list and pushes
    nothing. The list isn't checked for missing files when the overlay opens.
-3. Picking a Root Unit that has no Graph Tab yet calls `expandFromRootUnit`
-   over IPC (one that already has a Graph Tab just activates it, with no
+3. Picking a Root Unit that has no Unit Tab yet calls `expandFromRootUnit`
+   over IPC (one that already has a Unit Tab just activates it, with no
    IPC)
    (`main/ipc/graph.js`'s `ipcMain.handle('expandFromRootUnit', ...)` →
    `performExpandFromRootUnit`), which reads the needed `.pas` files from
    disk in the **main** process (not the renderer) and runs
    `expandDependencyGraph`.
-4. The renderer opens a new Graph Tab at the end of the Tab bar, and its
+4. The renderer opens a new Unit Tab at the end of the Tab bar, and its
    `GraphView` draws `{ nodes, edges }` with `vis-network`'s `Network` — no
    page reload involved; the same renderer session reacts to each IPC push.
-   `app:project-loaded` closes every Graph Tab (and activates the Welcome
+   `app:project-loaded` closes every Unit Tab (and activates the Welcome
    Tab, reopening it if needed).
 5. `Edição > Selecionar Unit`'s `click` handler (`main/menu.js`) just sends
    `mainWindow.webContents.send('app:show-root-unit-selection')`, with no

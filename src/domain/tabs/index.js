@@ -2,8 +2,8 @@ export const WELCOME_TAB_ID = 'welcome';
 
 const WELCOME_TAB = { id: WELCOME_TAB_ID, kind: 'welcome' };
 
-export function graphTabId(unitName) {
-  return `graph:${unitName.toLowerCase()}`;
+export function unitTabId(unitName) {
+  return `unit:${unitName.toLowerCase()}`;
 }
 
 export function initialTabsState() {
@@ -34,8 +34,8 @@ export function openWelcomeTab(state) {
   return openTab(state, WELCOME_TAB);
 }
 
-export function openGraphTab(state, tab) {
-  return openTab(state, { ...tab, kind: 'graph' });
+export function openUnitTab(state, tab) {
+  return openTab(state, { ...tab, kind: 'unit' });
 }
 
 export function canCloseTab(state, id) {
@@ -53,8 +53,8 @@ export function closeTab(state, id) {
   return { tabs, activeId, activationOrder };
 }
 
-export function closeGraphTabs(state) {
-  const tabs = state.tabs.filter((tab) => tab.kind !== 'graph');
+export function closeUnitTabs(state) {
+  const tabs = state.tabs.filter((tab) => tab.kind !== 'unit');
   const remaining = new Set(tabs.map((tab) => tab.id));
   const cleared = {
     tabs,

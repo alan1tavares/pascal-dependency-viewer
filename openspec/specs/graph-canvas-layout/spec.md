@@ -11,7 +11,7 @@ qualquer tamanho ou estado (normal, maximizada ou tela cheia).
 ### Requirement: A área de renderização preenche a janela
 O sistema SHALL fazer com que a área de conteúdo das Tabs (capability
 `tabs`) ocupe toda a largura da janela do Electron e toda a altura abaixo
-da barra de Tabs, e que o container do grafo de cada Graph Tab e o
+da barra de Tabs, e que o container do grafo de cada Unit Tab e o
 conteúdo da Welcome Tab preencham essa área, independentemente do tamanho
 ou estado da janela (normal, maximizada ou tela cheia).
 
@@ -38,7 +38,7 @@ Quando a janela do app é redimensionada — incluindo alternar entre
 maximizada, tela cheia e tamanho normal — após o grafo já estar
 renderizado, o sistema SHALL ajustar o tamanho do canvas do `vis-network`
 para preencher o novo espaço disponível, sem exigir reabrir o arquivo ou
-recarregar a janela manualmente. Isso SHALL valer também para Graph Tabs
+recarregar a janela manualmente. Isso SHALL valer também para Unit Tabs
 que não estavam ativas durante o redimensionamento, quando forem ativadas.
 
 #### Scenario: Maximizar a janela após o grafo já estar renderizado
@@ -47,7 +47,7 @@ que não estavam ativas durante o redimensionamento, quando forem ativadas.
 - **THEN** o canvas do grafo se redimensiona automaticamente para preencher
   a nova área disponível, sem necessidade de reabrir o arquivo
 
-#### Scenario: Redimensionar com a Graph Tab inativa
-- **WHEN** as Graph Tabs `UnitA` e `UnitB` estão abertas, `UnitB` está
+#### Scenario: Redimensionar com a Unit Tab inativa
+- **WHEN** as Unit Tabs `UnitA` e `UnitB` estão abertas, `UnitB` está
   ativa, o usuário maximiza a janela e depois ativa `UnitA`
 - **THEN** o canvas do grafo de `UnitA` preenche a nova área disponível

@@ -118,8 +118,8 @@ busca/listagem de Root Unit já existente (capability
 expansão de grafo já feita a partir dele) — sem reabrir o diálogo nativo de
 seleção de arquivo `.dpr` e sem reler o `.dpr` do disco. O usuário pode então
 escolher uma Project Unit como Root Unit, o que abre (ou ativa, se já
-existir) a Graph Tab dela, como coberto pelas capabilities
-`root-unit-selection` e `tabs`, sem fechar as Graph Tabs já abertas.
+existir) a Unit Tab dela, como coberto pelas capabilities
+`root-unit-selection` e `tabs`, sem fechar as Unit Tabs já abertas.
 
 Se nenhum Projeto tiver sido carregado ainda nesta sessão (nenhum
 `app:project-loaded` recebido), clicar em `Selecionar Unit` SHALL não ter
@@ -139,10 +139,10 @@ Project Units para listar), nem exibir qualquer diálogo.
   clica em `UnitB`
 - **THEN** o grafo é expandido a partir de `UnitB` exatamente como
   aconteceria ao escolher `UnitB` na tela original de Root Unit
-  (capability `root-unit-selection`), numa nova Graph Tab `UnitB` que fica
-  ativa, e a Graph Tab `UnitA` continua aberta
+  (capability `root-unit-selection`), numa nova Unit Tab `UnitB` que fica
+  ativa, e a Unit Tab `UnitA` continua aberta
 
-#### Scenario: Usuário reabre a tela de Root Unit sem nenhuma Graph Tab
+#### Scenario: Usuário reabre a tela de Root Unit sem nenhuma Unit Tab
 - **WHEN** o usuário abriu um Projeto, fechou o modo `Selecionar Unit`
   exibido automaticamente sem escolher nada, e clica em `Selecionar Unit`
   no menu `Edição`
@@ -210,7 +210,7 @@ mesmo do Command `Bem-vindo` da Command Palette.
 - **THEN** exatamente uma opção é exibida: `Bem-vindo`
 
 #### Scenario: Usuário clica em "Bem-vindo" com a Welcome Tab fechada
-- **WHEN** a Welcome Tab foi fechada, a Graph Tab `UnitA` está ativa e o
+- **WHEN** a Welcome Tab foi fechada, a Unit Tab `UnitA` está ativa e o
   usuário clica em `Ajuda > Bem-vindo`
 - **THEN** a Welcome Tab é aberta no fim da barra e fica ativa
 

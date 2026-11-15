@@ -93,7 +93,7 @@ Origem: sessão de design do recurso de Tabs (`/grill-with-docs`, 2026-10-15).
 
 ## O problema
 
-A primeira versão das Tabs (Welcome Tab + Graph Tabs, no estilo do VSCode)
+A primeira versão das Tabs (Welcome Tab + Unit Tabs, no estilo do VSCode)
 deixou de fora, de propósito, vários comportamentos que o VSCode tem:
 
 - arrastar abas para reordenar;
@@ -128,7 +128,7 @@ evento parece às vezes não vir depois que os dados são adicionados. Acontece
 também na `main`, com um único grafo, então não foi introduzido pelas Tabs.
 
 Efeito para o usuário: os nós podem continuar se mexendo sozinhos, e o
-teste `voltar a uma Graph Tab mantém zoom e posições do grafo`
+teste `voltar a uma Unit Tab mantém zoom e posições do grafo`
 (`e2e/tabs.spec.ts`) se pula nesses casos, porque não há grafo parado para
 comparar.
 
@@ -140,8 +140,8 @@ dados — por exemplo, chamar `network.stabilize()` explicitamente depois de
 adicionar os dados, ou desligar a física também em `stabilized`.
 
 Depois de corrigir, tirar o `test.skip(!stable, ...)` do teste `voltar a uma
-Graph Tab mantém zoom e posições do grafo` (`e2e/tabs.spec.ts`), para que o
-requisito "Graph Tab preserva seu estado de exibição" (capability `tabs`)
+Unit Tab mantém zoom e posições do grafo` (`e2e/tabs.spec.ts`), para que o
+requisito "Unit Tab preserva seu estado de exibição" (capability `tabs`)
 volte a ser verificado em toda execução, e não só quando a física para.
 
 Não é bloqueante.

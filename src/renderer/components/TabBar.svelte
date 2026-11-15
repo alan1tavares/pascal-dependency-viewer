@@ -29,7 +29,7 @@
       tabindex="0"
       aria-selected={active}
       data-tab-id={tab.id}
-      title={tab.kind === 'graph' ? tab.path : undefined}
+      title={tab.kind === 'unit' ? tab.path : undefined}
       onmousedown={() => onActivate(tab.id)}
       onkeydown={(event) => event.key === 'Enter' && onActivate(tab.id)}
     >
