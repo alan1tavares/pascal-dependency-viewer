@@ -26,6 +26,12 @@
     [ROOT_UNIT_MODE]: "Nenhuma unit encontrada",
     [METHOD_MODE]: "Nenhum método encontrado",
   };
+  // Prefixo fixo dos modos de escolha; a lista de Commands não tem prefixo.
+  const MODE_PREFIXES = {
+    [RECENTS_MODE]: "Abrir recente",
+    [ROOT_UNIT_MODE]: "Selecionar Unit",
+    [METHOD_MODE]: "Selecionar Método",
+  };
 
   let hasProject = $state(() => false);
   let getProject = $state(() => null);
@@ -326,8 +332,8 @@
     role="presentation"
   >
     <div class="commandPaletteCard" role="dialog" aria-modal="true">
-    {#if mode === METHOD_MODE}
-      <div class="commandPrefix" id="commandPalettePrefix">Selecionar Método</div>
+    {#if MODE_PREFIXES[mode]}
+      <div class="commandPrefix" id="commandPalettePrefix">{MODE_PREFIXES[mode]}</div>
     {/if}
     <input
       id="commandPaletteInput"

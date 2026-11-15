@@ -258,3 +258,54 @@ describe('análise em andamento', () => {
     expect(items()).toEqual(['UnitCliente src\\UnitCliente.pas']);
   });
 });
+
+describe('prefixo fixo por modo', () => {
+  const RECENTS = ['/proj/A.dpr', '/outros/B.dpr'];
+
+  test('lista de Commands não tem prefixo', async () => {
+    setup();
+    palette.showCommandPalette();
+    await tick();
+    expect(prefix()).toBeUndefined();
+    expect(input().placeholder).toBe('Digite um comando');
+  });
+
+  test.each([
+    ['direto (menu ou atalho)', async () => palette.showOpenRecent()],
+    ['pelo Command Abrir recente', async () => {
+      palette.showCommandPalette();
+      await tick();
+      const button = [...document.querySelectorAll('.commandItem')].find((el) => el.textContent.includes('Abrir recente'));
+      await fireEvent.click(button);
+    }],
+  ])('Abrir recente %s: prefixo fixo e texto de ajuda', async (_, open) => {
+    setup();
+    api.listRecentProjects = vi.fn(async () => RECENTS);
+    await open();
+    await flush();
+    expect(prefix()).toBe('Abrir recente');
+    expect(input().value).toBe('');
+    expect(input().placeholder).toBe('Escolha o projeto');
+    expect(items().map((t) => t.split(' ')[0])).toEqual(['A.dpr', 'B.dpr']);
+    await type('b.dpr');
+    expect(prefix()).toBe('Abrir recente');
+    expect(input().value).toBe('b.dpr');
+  });
+
+  test('Selecionar Unit: texto de ajuda com o input vazio e prefixo mantido ao digitar', async () => {
+    setup();
+    palette.enterRootUnitMode(
+      [{ unitName: 'UnitA', path: 'UnitA.pas' }, { unitName: 'UnitB', path: 'UnitB.pas' }],
+      '/p',
+      { entry: 'direct' },
+    );
+    await tick();
+    expect(prefix()).toBe('Selecionar Unit');
+    expect(input().value).toBe('');
+    expect(input().placeholder).toBe('Filtrar por nome ou caminho da unit');
+    await type('unitb');
+    expect(prefix()).toBe('Selecionar Unit');
+    expect(input().value).toBe('unitb');
+    expect(items()).toEqual(['UnitB UnitB.pas']);
+  });
+});
